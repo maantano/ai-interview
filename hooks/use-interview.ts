@@ -200,6 +200,7 @@ export function useInterview() {
   const generateNewQuestion = useCallback(async () => {
     try {
       setError(null);
+      console.log("🔄 generateNewQuestion called");
 
       if (!currentSession?.questionQueue) {
         throw new Error("질문 큐를 찾을 수 없습니다.");
@@ -209,10 +210,17 @@ export function useInterview() {
       const answeredQuestionIds = currentSession.results.map(r => r.questionId);
       const unansweredQuestions = queue.filter(q => !answeredQuestionIds.includes(q.id));
       
+      console.log("📊 Question queue status:", {
+        totalQuestions: queue.length,
+        answeredCount: answeredQuestionIds.length,
+        unansweredCount: unansweredQuestions.length
+      });
+      
       // First, try to serve from existing queue
       const nextQuestion = unansweredQuestions[0];
       
       if (nextQuestion) {
+        console.log("✅ Found next question from queue:", nextQuestion.question);
         // Set the next question from queue immediately
         setCurrentQuestion(nextQuestion);
         setCurrentAnswer("");
@@ -221,6 +229,7 @@ export function useInterview() {
         // Check if we need to refill the queue (less than 3 unanswered questions remaining)
         if (unansweredQuestions.length <= 3) {
           try {
+            console.log("🔄 Refilling question queue in background...");
             // Refill queue in background without blocking UI
             await generateQuestionsForSession(currentSession, true);
           } catch (refillError) {
@@ -230,11 +239,11 @@ export function useInterview() {
         }
       } else {
         // No unanswered questions left, generate new batch
-        console.log("No unanswered questions left, generating new batch...");
+        console.log("❌ No unanswered questions left, generating new batch...");
         await generateQuestionsForSession(currentSession);
       }
     } catch (err) {
-      console.error("Error generating question:", err);
+      console.error("❌ Error generating question:", err);
       setError(
         err instanceof Error
           ? err.message
@@ -265,6 +274,7 @@ export function useInterview() {
 
       try {
         // Call AI analysis API
+        console.log("🚀 Calling analyze-answer API...");
         const response = await fetch('/api/ai/analyze-answer', {
           method: 'POST',
           headers: {
@@ -279,10 +289,46 @@ export function useInterview() {
           }),
         });
 
-        const result = await response.json();
+        console.log("📡 API Response status:", response.status);
+        
+        // Check if response is ok before parsing JSON
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("❌ API Response error:", errorText);
+          throw new Error(`API 요청 실패 (${response.status}): ${errorText}`);
+        }
+
+        let result;
+        try {
+          result = await response.json();
+          console.log("📦 API Response data:", result);
+        } catch (parseError) {
+          console.error("❌ Failed to parse API response as JSON:", parseError);
+          throw new Error("서버 응답을 해석할 수 없습니다.");
+        }
 
         if (result.success) {
           const analysis = result.analysis;
+          console.log("✅ Analysis received:", analysis);
+
+          // Validate analysis structure before using it
+          if (!analysis || typeof analysis !== 'object') {
+            console.error("❌ Invalid analysis structure:", analysis);
+            throw new Error("분석 결과의 형식이 올바르지 않습니다.");
+          }
+
+          // Validate required fields
+          if (!analysis.id || !analysis.questionId || !analysis.scores || typeof analysis.totalScore !== 'number') {
+            console.error("❌ Missing required analysis fields:", analysis);
+            throw new Error("분석 결과에 필요한 정보가 누락되었습니다.");
+          }
+
+          // Fix date handling - convert string dates back to Date objects
+          if (typeof analysis.createdAt === 'string') {
+            analysis.createdAt = new Date(analysis.createdAt);
+          }
+
+          console.log("🔍 Analysis validation passed");
 
           // Update session with new result
           const updatedSession = {
@@ -290,29 +336,44 @@ export function useInterview() {
             results: [...currentSession.results, analysis],
           };
 
+          console.log("💾 Setting current session...", updatedSession);
           setCurrentSession(updatedSession);
+          console.log("🎯 Setting current analysis...", analysis);
           setCurrentAnalysis(analysis); // This will update the analysis screen with results
 
           // Save to storage
           try {
             storage.saveCurrentSession(updatedSession);
+            console.log("✅ Session saved to storage");
           } catch (storageError) {
             console.warn("Failed to save session to storage:", storageError);
           }
 
+          console.log("🎉 Analysis complete - staying on analysis screen");
           // Analysis screen is already showing, results will update automatically
         } else {
           // Check if this is a validation error (400 status)
           if (response.status === 400) {
             // For validation errors, show error message but don't navigate away from interview screen
+            console.log("❌ Validation error:", result.error);
             setError(result.error || "입력 값이 올바르지 않습니다.");
             setCurrentScreen("interview"); // Stay on interview screen for validation errors
             return;
           }
+          console.log("❌ API error:", result.error);
           throw new Error(result.error || "Analysis failed");
         }
       } catch (error) {
-        console.error("Analysis failed:", error);
+        console.error("❌ Analysis failed with error:", error);
+        
+        // Log the exact point where the error occurred
+        if (error instanceof Error) {
+          console.error("❌ Error details:", {
+            message: error.message,
+            stack: error.stack,
+            name: error.name
+          });
+        }
 
         // Retry logic for network errors
         if (

@@ -40,7 +40,9 @@ export default function HomePage() {
             clearError={interviewState.clearError}
           />
         )}
-        {interviewState.currentScreen === "analysis" && <AnalysisScreen />}
+        {interviewState.currentScreen === "analysis" && (
+          <AnalysisScreen />
+        )}
         {interviewState.currentScreen === "history" && <HistoryScreen />}
       </main>
     </ErrorBoundary>
