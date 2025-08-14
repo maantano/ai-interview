@@ -17,7 +17,7 @@ export const storage = {
       const session = JSON.parse(data)
       // Date 객체 복원
       session.createdAt = new Date(session.createdAt)
-      session.results = session.results.map((result: any) => ({
+      session.results = session.results.map((result: {createdAt: string | Date; [key: string]: unknown}) => ({
         ...result,
         createdAt: new Date(result.createdAt),
       }))
@@ -53,10 +53,10 @@ export const storage = {
       if (!data) return []
 
       const sessions = JSON.parse(data)
-      return sessions.map((session: any) => ({
+      return sessions.map((session: {createdAt: string | Date; results: {createdAt: string | Date; [key: string]: unknown}[]; [key: string]: unknown}) => ({
         ...session,
         createdAt: new Date(session.createdAt),
-        results: session.results.map((result: any) => ({
+        results: session.results.map((result: {createdAt: string | Date; [key: string]: unknown}) => ({
           ...result,
           createdAt: new Date(result.createdAt),
         })),

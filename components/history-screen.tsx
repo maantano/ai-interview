@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { storage } from "@/lib/storage"
-import type { InterviewSession, AnalysisResult } from "@/types/interview"
+import type { InterviewSession, AnalysisResult, AppScreen } from "@/types/interview"
 import {
   ArrowLeft,
   Calendar,
@@ -25,6 +25,11 @@ const jobCategoryLabels = {
   planner: "기획자",
   designer: "디자이너",
   marketer: "마케터",
+  "data-science": "데이터 사이언티스트",
+  devops: "DevOps 엔지니어",
+  "product-management": "프로덕트 매니저",
+  qa: "QA 엔지니어",
+  "mobile-development": "모바일 개발자",
   other: "기타",
 }
 
@@ -127,8 +132,8 @@ function DetailModal({ result, questionNumber }: DetailModalProps) {
 }
 
 interface HistoryScreenProps {
-  setCurrentScreen: (screen: any) => void;
-  currentSession: any;
+  setCurrentScreen: (screen: AppScreen) => void;
+  currentSession: InterviewSession | null;
 }
 
 export function HistoryScreen({ setCurrentScreen, currentSession }: HistoryScreenProps) {

@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import type { JobCategory, InterviewQuestion, AnalysisResult, AnalysisScore } from "@/types/interview";
+import type { JobCategory, InterviewQuestion, AnalysisResult } from "@/types/interview";
 
 // Initialize Gemini AI
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
@@ -73,8 +73,8 @@ export async function generateQuestions(
     
     // Validate and format questions
     const questions: InterviewQuestion[] = questionsData
-      .filter((q: any) => q.question && q.difficulty && q.category)
-      .map((q: any, index: number) => ({
+      .filter((q: {question?: string; difficulty?: string; category?: string}) => q.question && q.difficulty && q.category)
+      .map((q: {question: string; difficulty: string; category: string}, index: number) => ({
         id: `ai-${Date.now()}-${index}`,
         category: category,
         question: q.question.trim(),
@@ -215,7 +215,7 @@ export async function analyzeAnswer(
         : ["다시 시도해주세요."],
       sampleAnswer: analysisData.idealAnswer || "모범 답변을 생성할 수 없습니다.",
       detailedFeedback: analysisData.feedback || undefined,  // 구체적인 첨삭 내용
-      conceptualExplanation: (analysisData as any).conceptualExplanation || undefined,  // 질문의 의도와 개념 설명
+      conceptualExplanation: (analysisData as AIAnalysisResponse & {conceptualExplanation?: string}).conceptualExplanation || undefined,  // 질문의 의도와 개념 설명
       createdAt: new Date(),
     };
 

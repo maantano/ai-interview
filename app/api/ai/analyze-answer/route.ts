@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Check API health first
     const healthCheck = await checkAPIHealth();
-    let analysis: AnalysisResult;
+    let analysis: AnalysisResult | null = null;
     let aiGenerated = false;
 
     if (healthCheck.available) {
@@ -100,6 +100,10 @@ export async function POST(request: NextRequest) {
       };
       
       analysis = analyzeUserAnswer(mockQuestion, answer, category, customCategory);
+    }
+
+    if (!analysis) {
+      throw new Error('Analysis could not be completed');
     }
 
     return NextResponse.json({
