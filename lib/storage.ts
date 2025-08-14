@@ -17,7 +17,7 @@ export const storage = {
       const session = JSON.parse(data)
       // Date 객체 복원
       session.createdAt = new Date(session.createdAt)
-      session.results = session.results.map((result: any) => ({
+      session.results = session.results.map((result: {createdAt: string}) => ({
         ...result,
         createdAt: new Date(result.createdAt),
       }))
@@ -52,11 +52,11 @@ export const storage = {
       const data = localStorage.getItem(STORAGE_KEYS.SESSIONS_HISTORY)
       if (!data) return []
 
-      const sessions = JSON.parse(data)
-      return sessions.map((session: {createdAt: string, results: {createdAt: string}[]}) => ({
+      const sessions = JSON.parse(data) as InterviewSession[]
+      return sessions.map((session) => ({
         ...session,
         createdAt: new Date(session.createdAt),
-        results: session.results.map((result: {createdAt: string}) => ({
+        results: session.results.map((result) => ({
           ...result,
           createdAt: new Date(result.createdAt),
         })),

@@ -19,7 +19,7 @@ import {
   BarChart3,
 } from "lucide-react"
 
-const jobCategoryLabels = {
+const jobCategoryLabels: Record<string, string> = {
   frontend: "프론트엔드 개발자",
   backend: "백엔드 개발자",
   planner: "기획자",

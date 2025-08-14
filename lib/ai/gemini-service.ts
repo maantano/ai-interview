@@ -33,6 +33,7 @@ interface AIAnalysisResponse {
   improvements: string[];
   feedback: string;
   idealAnswer: string;
+  conceptualExplanation?: string;
 }
 
 /**
@@ -76,12 +77,13 @@ export async function generateQuestions(
       throw new Error("Invalid JSON format in AI response");
     }
 
-    const questionsData = JSON.parse(jsonMatch[0]);
+    const questionsData = JSON.parse(jsonMatch[0]) as Array<{question?: string, difficulty?: string, category?: string}>;
 
     // Validate and format questions
     const questions: InterviewQuestion[] = questionsData
-      .filter((q: {question?: string, difficulty?: string, category?: string}) => q.question && q.difficulty && q.category)
-      .map((q: {question: string, difficulty: string, category: string}, index: number) => ({
+      .filter((q): q is {question: string, difficulty: string, category: string} => 
+        typeof q.question === 'string' && typeof q.difficulty === 'string' && typeof q.category === 'string')
+      .map((q, index: number) => ({
         id: `ai-${Date.now()}-${index}`,
         category: category,
         question: q.question.trim(),
@@ -182,7 +184,7 @@ export async function analyzeAnswer(
 
     let analysisData: AIAnalysisResponse;
     try {
-      analysisData = JSON.parse(jsonMatch[0]);
+      analysisData = JSON.parse(jsonMatch[0]) as AIAnalysisResponse;
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
       console.error("Extracted JSON:", jsonMatch[0]);
@@ -232,7 +234,7 @@ export async function analyzeAnswer(
         analysisData.idealAnswer || "모범 답변을 생성할 수 없습니다.",
       detailedFeedback: analysisData.feedback || undefined, // 구체적인 첨삭 내용
       conceptualExplanation:
-        (analysisData as {conceptualExplanation?: string}).conceptualExplanation || undefined, // 질문의 의도와 개념 설명
+        analysisData.conceptualExplanation || undefined, // 질문의 의도와 개념 설명
       createdAt: new Date(),
     };
 
@@ -259,7 +261,17 @@ export async function analyzeAnswer(
 
     return {
       success: false,
-      analysis: {} as AnalysisResult,
+      analysis: {
+        id: `error-${Date.now()}`,
+        questionId: '',
+        answer: '',
+        scores: { understanding: 0, logic: 0, specificity: 0, jobFit: 0 },
+        totalScore: 0,
+        strengths: [],
+        improvements: [],
+        sampleAnswer: '',
+        createdAt: new Date()
+      },
       error: error instanceof Error ? error.message : "Unknown error occurred",
     };
   }

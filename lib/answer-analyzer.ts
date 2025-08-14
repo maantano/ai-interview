@@ -65,7 +65,7 @@ export function analyzeUserAnswer(
     improvements,
     sampleAnswer: idealAnswer, // Changed from idealAnswer to sampleAnswer
     detailedFeedback: `답변의 ${Math.max(strengths.length, 1)}가지 강점이 있으나, ${Math.max(improvements.length, 1)}가지 개선점이 필요합니다. 특히 ${improvements[0] || '구체적인 경험 제시'}가 중요합니다.`,
-    conceptualExplanation: `이 질문은 ${jobCategory}의 핵심 역량을 평가하기 위한 것입니다. 실무 경험과 문제 해결 능력을 구체적으로 보여주는 것이 중요합니다.`,
+    conceptualExplanation: `이 질문은 ${category === 'other' ? customCategory || '해당 직무' : category}의 핵심 역량을 평가하기 위한 것입니다. 실무 경험과 문제 해결 능력을 구체적으로 보여주는 것이 중요합니다.`,
     createdAt: new Date(),
   }
 }
@@ -74,6 +74,11 @@ function getJobKeywords(category: JobCategory, customCategory?: string): string[
   const keywords: Record<JobCategory, string[]> = {
     frontend: ["React", "JavaScript", "CSS", "HTML", "UI", "UX", "컴포넌트", "반응형", "브라우저", "사용자"],
     backend: ["API", "데이터베이스", "서버", "성능", "보안", "확장성", "아키텍처", "최적화"],
+    "mobile-development": ["모바일", "앱", "iOS", "Android", "React Native", "Flutter", "사용자", "인터페이스"],
+    "data-science": ["데이터", "분석", "머신러닝", "모델", "통계", "파이썬", "시각화", "인사이트"],
+    devops: ["인프라", "배포", "CI/CD", "모니터링", "클라우드", "자동화", "컨테이너", "도커"],
+    qa: ["테스트", "품질", "검증", "버그", "자동화", "시나리오", "케이스", "검수"],
+    "product-management": ["제품", "로드맵", "요구사항", "우선순위", "사용자", "비즈니스", "전략", "기획"],
     planner: ["기획", "요구사항", "분석", "사용자", "프로세스", "개선", "전략", "목표"],
     designer: ["디자인", "사용자", "경험", "인터페이스", "브랜드", "시각적", "레이아웃", "색상"],
     marketer: ["마케팅", "고객", "브랜드", "캠페인", "분석", "성과", "타겟", "전략"],

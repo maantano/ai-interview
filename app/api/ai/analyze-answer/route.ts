@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
 
     // Check API health first
     const healthCheck = await checkAPIHealth();
-    let analysis: AnalysisResult;
+    let analysis: AnalysisResult | undefined;
     let aiGenerated = false;
 
     if (healthCheck.available) {
@@ -100,6 +100,13 @@ export async function POST(request: NextRequest) {
       };
       
       analysis = analyzeUserAnswer(mockQuestion, answer, category, customCategory);
+    }
+
+    if (!analysis) {
+      return NextResponse.json({
+        success: false,
+        error: "Failed to analyze answer"
+      }, { status: 500 });
     }
 
     return NextResponse.json({
