@@ -7,6 +7,7 @@ import { InterviewScreen } from "@/components/interview-screen";
 import { AnalysisScreen } from "@/components/analysis-screen";
 import { HistoryScreen } from "@/components/history-screen";
 import { ErrorBoundary } from "@/components/error-boundary";
+import GATracker from "@/components/ga-tracker";
 
 export default function HomePage() {
   const interviewState = useInterview();
@@ -23,6 +24,7 @@ export default function HomePage() {
 
   return (
     <ErrorBoundary>
+      <GATracker />
       <main className="min-h-screen bg-background">
         {interviewState.currentScreen === "job-selection" && (
           <JobSelectionScreen startSession={interviewState.startSession} />
