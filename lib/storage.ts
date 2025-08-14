@@ -52,15 +52,23 @@ export const storage = {
       const data = localStorage.getItem(STORAGE_KEYS.SESSIONS_HISTORY)
       if (!data) return []
 
-      const sessions = JSON.parse(data)
-      return sessions.map((session: any) => ({
-        ...session,
-        createdAt: new Date(session.createdAt),
-        results: session.results.map((result: any) => ({
-          ...result,
-          createdAt: new Date(result.createdAt),
-        })),
-      }))
+      const sessions = JSON.parse(data) as unknown[]
+      return sessions.map((session: unknown) => {
+        if (typeof session !== 'object' || session === null) return session;
+        const s = session as Record<string, unknown>;
+        return {
+          ...s,
+          createdAt: new Date(s.createdAt as string),
+          results: (s.results as unknown[]).map((result: unknown) => {
+            if (typeof result !== 'object' || result === null) return result;
+            const r = result as Record<string, unknown>;
+            return {
+              ...r,
+              createdAt: new Date(r.createdAt as string),
+            };
+          }),
+        };
+      }) as InterviewSession[]
     } catch (error) {
       console.error("Failed to get sessions history:", error)
       return []

@@ -205,7 +205,7 @@ export function HistoryScreen({ setCurrentScreen, currentSession }: HistoryScree
             const isCurrentSession = sessionIndex === 0 && currentSession
             const jobLabel =
               session.category === "other" ? session.customCategory || "기타" : 
-              (jobCategoryLabels[session.category as any] || session.category)
+              (jobCategoryLabels[session.category as keyof typeof jobCategoryLabels] || session.category)
 
             const averageScore =
               session.results.length > 0

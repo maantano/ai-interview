@@ -77,11 +77,13 @@ export async function generateQuestions(
       throw new Error("Invalid JSON format in AI response");
     }
 
-    const questionsData = JSON.parse(jsonMatch[0]);
+    const questionsData = JSON.parse(jsonMatch[0]) as unknown[];
 
     const questions: InterviewQuestion[] = questionsData
-      .filter((q: any) => q.question && q.difficulty && q.category)
-      .map((q: any, index: number) => ({
+      .filter((q: unknown): q is {question: string, difficulty: string, category: string} => 
+        typeof q === 'object' && q !== null && 
+        'question' in q && 'difficulty' in q && 'category' in q)
+      .map((q, index: number) => ({
         id: `ai-${Date.now()}-${index}`,
         category: category,
         question: q.question.trim(),
@@ -182,7 +184,7 @@ export async function analyzeAnswer(
 
     let analysisData: AIAnalysisResponse;
     try {
-      analysisData = JSON.parse(jsonMatch[0]);
+      analysisData = JSON.parse(jsonMatch[0]) as AIAnalysisResponse;
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
       console.error("Extracted JSON:", jsonMatch[0]);
