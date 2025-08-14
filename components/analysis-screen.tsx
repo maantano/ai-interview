@@ -70,11 +70,12 @@ export function AnalysisScreen({
   currentSession,
   currentQuestion,
   currentAnalysis,
+  isAnalyzing,
   editAnswer,
   nextQuestion,
   endSession,
   setCurrentScreen,
-}: Omit<AnalysisScreenProps, 'isAnalyzing'>) {
+}: AnalysisScreenProps) {
   // Debug logging
   // console.log("🖥️ AnalysisScreen render:", {
   //   hasCurrentSession: !!currentSession,
@@ -134,8 +135,8 @@ export function AnalysisScreen({
     return () => clearInterval(interval);
   }, [currentAnalysis]);
 
-  // Show loading screen only if we don't have analysis data
-  if (!currentSession || !currentQuestion || !currentAnalysis) {
+  // Show loading screen only if we don't have analysis data or if currently analyzing
+  if (!currentSession || !currentQuestion || !currentAnalysis || isAnalyzing) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="text-center space-y-6">
