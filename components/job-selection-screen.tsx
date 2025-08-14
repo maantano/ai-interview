@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { AnalyticsDashboard } from "@/components/analytics-dashboard";
+import { incrementVisitors, incrementInterviewStarted } from "@/lib/analytics-api";
 import type { JobCategory } from "@/types/interview";
 
 const jobOptions = [
@@ -81,10 +83,18 @@ export function JobSelectionScreen({ startSession }: JobSelectionScreenProps) {
   const [customJob, setCustomJob] = useState("");
   const [isStarting, setIsStarting] = useState(false);
 
+  // 페이지 방문 시 방문자 수 증가
+  useEffect(() => {
+    incrementVisitors();
+  }, []);
+
   const handleStart = async () => {
     if (!selectedJob) return;
 
     setIsStarting(true);
+
+    // 면접 시작 수 증가
+    incrementInterviewStarted();
 
     await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -95,13 +105,19 @@ export function JobSelectionScreen({ startSession }: JobSelectionScreenProps) {
   const canStart = selectedJob && (selectedJob !== "other" || customJob.trim());
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="text-center mb-8">
-        {/* <h1 className="text-4xl font-bold text-foreground mb-4">AI 면접 첨삭 서비스</h1> */}
-        <p className="text-lg text-muted-foreground">
-          AI가 분석하는 맞춤형 면접 질문과 전문적인 답변 피드백을 받아보세요
-        </p>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Analytics Dashboard */}
+      <div className="mb-12">
+        <AnalyticsDashboard />
       </div>
+
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-foreground mb-4">AI 면접 첨삭 서비스</h1>
+          <p className="text-lg text-muted-foreground">
+            AI가 분석하는 맞춤형 면접 질문과 전문적인 답변 피드백을 받아보세요
+          </p>
+        </div>
 
       <Card className="w-full">
         <CardHeader>
@@ -169,12 +185,13 @@ export function JobSelectionScreen({ startSession }: JobSelectionScreenProps) {
             )}
           </Button>
         </CardContent>
-      </Card>
+        </Card>
 
-      <div className="mt-8 text-center">
-        <p className="text-sm text-muted-foreground">
-          회원가입 없이 바로 시작할 수 있습니다
-        </p>
+        <div className="mt-8 text-center">
+          <p className="text-sm text-muted-foreground">
+            회원가입 없이 바로 시작할 수 있습니다
+          </p>
+        </div>
       </div>
     </div>
   );
