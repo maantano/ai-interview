@@ -26,40 +26,39 @@ async function getGoogleAnalyticsData() {
     google.options({ auth });
     const analytics = google.analyticsdata('v1beta');
 
-    // 총 방문자 수 (페이지뷰) - 오늘 데이터만
+    // 총 방문자 수 - 30일간 활성 사용자
     const pageViewsResponse = await analytics.properties.runReport({
       property: `properties/${propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: 'today', endDate: 'today' }],
-        metrics: [{ name: 'activeUsers' }],  // 활성 사용자로 변경
+        dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+        metrics: [{ name: 'totalUsers' }],  // 총 사용자 수
       },
     });
 
-    // 커스텀 이벤트 데이터
+    // 모든 이벤트 데이터 가져오기 (필터 제거)
     const eventsResponse = await analytics.properties.runReport({
       property: `properties/${propertyId}`,
       requestBody: {
-        dateRanges: [{ startDate: '30daysAgo', endDate: 'today' }],
+        dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
         dimensions: [{ name: 'eventName' }],
         metrics: [{ name: 'eventCount' }],
-        dimensionFilter: {
-          filter: {
-            fieldName: 'eventName',
-            inListFilter: {
-              values: ['session_start', 'answer_analyzed']
-            }
-          }
-        }
       },
     });
 
+    // 디버깅: API 응답 확인
+    console.log('GA API Response - Page Views:', JSON.stringify(pageViewsResponse.data, null, 2));
+    console.log('GA API Response - Events:', JSON.stringify(eventsResponse.data, null, 2));
+    
     const totalVisitors = parseInt(pageViewsResponse.data.rows?.[0]?.metricValues?.[0]?.value || '0');
     let interviewStarted = 0;
     let analysisCompleted = 0;
 
+    // 모든 이벤트 확인
     eventsResponse.data.rows?.forEach((row) => {
       const eventName = row.dimensionValues?.[0]?.value;
       const eventCount = parseInt(row.metricValues?.[0]?.value || '0');
+      
+      console.log(`Event found: ${eventName} = ${eventCount}`);
       
       if (eventName === 'session_start') {
         interviewStarted = eventCount;
