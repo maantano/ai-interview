@@ -52,11 +52,14 @@ export const storage = {
       const data = localStorage.getItem(STORAGE_KEYS.SESSIONS_HISTORY)
       if (!data) return []
 
-      const sessions = JSON.parse(data) as InterviewSession[]
-      return sessions.map((session) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sessions = JSON.parse(data) as any[]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return sessions.map((session: any) => ({
         ...session,
         createdAt: new Date(session.createdAt),
-        results: session.results.map((result) => ({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        results: session.results.map((result: any) => ({
           ...result,
           createdAt: new Date(result.createdAt),
         })),

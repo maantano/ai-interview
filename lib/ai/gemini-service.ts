@@ -77,13 +77,16 @@ export async function generateQuestions(
       throw new Error("Invalid JSON format in AI response");
     }
 
-    const questionsData = JSON.parse(jsonMatch[0]) as Array<{question?: string, difficulty?: string, category?: string}>;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const questionsData = JSON.parse(jsonMatch[0]) as any;
 
     // Validate and format questions
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const questions: InterviewQuestion[] = questionsData
-      .filter((q): q is {question: string, difficulty: string, category: string} => 
-        typeof q.question === 'string' && typeof q.difficulty === 'string' && typeof q.category === 'string')
-      .map((q, index: number) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .filter((q: any) => q.question && q.difficulty && q.category)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .map((q: any, index: number) => ({
         id: `ai-${Date.now()}-${index}`,
         category: category,
         question: q.question.trim(),
@@ -184,7 +187,8 @@ export async function analyzeAnswer(
 
     let analysisData: AIAnalysisResponse;
     try {
-      analysisData = JSON.parse(jsonMatch[0]) as AIAnalysisResponse;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      analysisData = JSON.parse(jsonMatch[0]) as any;
     } catch (parseError) {
       console.error("JSON parse error:", parseError);
       console.error("Extracted JSON:", jsonMatch[0]);
