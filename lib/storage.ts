@@ -53,10 +53,10 @@ export const storage = {
       if (!data) return []
 
       const sessions = JSON.parse(data)
-      return sessions.map((session: any) => ({
+      return sessions.map((session: {createdAt: string, results: {createdAt: string}[]}) => ({
         ...session,
         createdAt: new Date(session.createdAt),
-        results: session.results.map((result: any) => ({
+        results: session.results.map((result: {createdAt: string}) => ({
           ...result,
           createdAt: new Date(result.createdAt),
         })),

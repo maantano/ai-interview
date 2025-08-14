@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { storage } from "@/lib/storage"
-import type { InterviewSession, AnalysisResult } from "@/types/interview"
+import type { InterviewSession, AnalysisResult, AppScreen } from "@/types/interview"
 import {
   ArrowLeft,
   Calendar,
@@ -127,8 +127,8 @@ function DetailModal({ result, questionNumber }: DetailModalProps) {
 }
 
 interface HistoryScreenProps {
-  setCurrentScreen: (screen: any) => void;
-  currentSession: any;
+  setCurrentScreen: (screen: AppScreen) => void;
+  currentSession: InterviewSession | null;
 }
 
 export function HistoryScreen({ setCurrentScreen, currentSession }: HistoryScreenProps) {
