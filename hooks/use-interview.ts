@@ -10,6 +10,7 @@ import type {
 } from "@/types/interview";
 import { mockQuestions } from "@/data/mock-questions";
 import { storage } from "@/lib/storage";
+import * as gtag from "@/lib/gtag";
 
 export function useInterview() {
   const [currentScreen, setCurrentScreen] =
@@ -197,6 +198,13 @@ export function useInterview() {
         setCurrentAnalysis(null);
         storage.saveCurrentSession(newSession);
 
+        // Google Analytics: Track session start
+        gtag.event({
+          action: "session_start",
+          category: "interview",
+          label: category,
+        });
+
         // Generate questions for the new session
         await generateQuestionsForSession(newSession);
       } catch (err) {
@@ -266,6 +274,13 @@ export function useInterview() {
         setCurrentQuestion(nextQuestion);
         setCurrentAnswer("");
         setCurrentAnalysis(null);
+
+        // Google Analytics: Track new question
+        gtag.event({
+          action: "new_question",
+          category: "interview",
+          label: currentSession.category,
+        });
 
         // Check if we need to refill the queue (less than 3 unanswered questions remaining)
         if (unansweredQuestions.length <= 3) {
@@ -425,6 +440,14 @@ export function useInterview() {
           // Force a re-render by setting isAnalyzing to false
           console.log("💾 Analysis data set, forcing re-render...");
           setIsAnalyzing(false);
+
+          // Google Analytics: Track answer analysis
+          gtag.event({
+            action: "answer_analyzed",
+            category: "interview",
+            label: currentSession.category,
+            value: analysis.totalScore,
+          });
         } else {
           // Check if this is a validation error (400 status)
           if (response.status === 400) {
@@ -498,6 +521,14 @@ export function useInterview() {
 
       if (currentSession && currentSession.results.length > 0) {
         storage.saveToHistory(currentSession);
+        
+        // Google Analytics: Track session completion
+        gtag.event({
+          action: "session_completed",
+          category: "interview",
+          label: currentSession.category,
+          value: currentSession.results.length,
+        });
       }
       storage.clearCurrentSession();
       setCurrentSession(null);
