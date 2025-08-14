@@ -63,7 +63,10 @@ export class ErrorBoundary extends React.Component<React.PropsWithChildren<{}>, 
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error("Error caught by boundary:", error, errorInfo)
+    console.error("❌ [DEBUG] Error caught by boundary:", error, errorInfo)
+    console.error("❌ [DEBUG] Error message:", error.message)
+    console.error("❌ [DEBUG] Error stack:", error.stack)
+    console.error("❌ [DEBUG] Component stack:", errorInfo.componentStack)
     
     // Store error info for debugging
     this.setState({ errorInfo })

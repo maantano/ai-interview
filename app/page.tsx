@@ -10,6 +10,16 @@ import { ErrorBoundary } from "@/components/error-boundary";
 
 export default function HomePage() {
   const interviewState = useInterview();
+  
+  // Debug logging
+  console.log("🏠 [DEBUG] HomePage render:", {
+    currentScreen: interviewState.currentScreen,
+    hasCurrentSession: !!interviewState.currentSession,
+    hasCurrentQuestion: !!interviewState.currentQuestion,
+    hasCurrentAnalysis: !!interviewState.currentAnalysis,
+    isAnalyzing: interviewState.isAnalyzing,
+    error: interviewState.error
+  });
 
   return (
     <ErrorBoundary>
@@ -41,9 +51,23 @@ export default function HomePage() {
           />
         )}
         {interviewState.currentScreen === "analysis" && (
-          <AnalysisScreen />
+          <AnalysisScreen 
+            currentSession={interviewState.currentSession}
+            currentQuestion={interviewState.currentQuestion}
+            currentAnalysis={interviewState.currentAnalysis}
+            isAnalyzing={interviewState.isAnalyzing}
+            editAnswer={interviewState.editAnswer}
+            nextQuestion={interviewState.nextQuestion}
+            endSession={interviewState.endSession}
+            setCurrentScreen={interviewState.setCurrentScreen}
+          />
         )}
-        {interviewState.currentScreen === "history" && <HistoryScreen />}
+        {interviewState.currentScreen === "history" && (
+          <HistoryScreen 
+            setCurrentScreen={interviewState.setCurrentScreen}
+            currentSession={interviewState.currentSession}
+          />
+        )}
       </main>
     </ErrorBoundary>
   );

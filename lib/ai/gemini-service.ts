@@ -155,7 +155,8 @@ export async function analyzeAnswer(
   "strengths": ["구체적인 예시", "논리적 설명"],
   "improvements": ["경험 추가 필요", "구체적 수치 제시"],
   "feedback": "질문의 핵심을 이해했으나 구체적인 경험 사례가 부족합니다. 실제 프로젝트 경험을 바탕으로 답변해보세요.",
-  "idealAnswer": "${jobTitle} 업무에서 실제로 사용한 구체적인 기술이나 방법론을 예시로 들어 설명하는 것이 좋습니다."
+  "idealAnswer": "${jobTitle} 업무에서 실제로 사용한 구체적인 기술이나 방법론을 예시로 들어 설명하는 것이 좋습니다.",
+  "conceptualExplanation": "이 질문은 지원자의 기술적 역량과 실무 경험을 평가하기 위한 것입니다. 핵심 개념과 배경 지식을 포함한 설명을 제공하세요."
 }`;
 
     const result = await model.generateContent(prompt);
@@ -213,6 +214,8 @@ export async function analyzeAnswer(
         ? analysisData.improvements.slice(0, 3) 
         : ["다시 시도해주세요."],
       sampleAnswer: analysisData.idealAnswer || "모범 답변을 생성할 수 없습니다.",
+      detailedFeedback: analysisData.feedback || undefined,  // 구체적인 첨삭 내용
+      conceptualExplanation: (analysisData as any).conceptualExplanation || undefined,  // 질문의 의도와 개념 설명
       createdAt: new Date(),
     };
 

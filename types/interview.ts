@@ -23,6 +23,8 @@ export interface AnalysisResult {
   strengths: string[]
   improvements: string[]
   sampleAnswer: string
+  detailedFeedback?: string      // 구체적인 첨삭 내용
+  conceptualExplanation?: string  // 질문의 의도와 개념 설명
   createdAt: Date
 }
 

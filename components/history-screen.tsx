@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { useInterview } from "@/hooks/use-interview"
 import { storage } from "@/lib/storage"
 import type { InterviewSession, AnalysisResult } from "@/types/interview"
 import {
@@ -127,8 +126,12 @@ function DetailModal({ result, questionNumber }: DetailModalProps) {
   )
 }
 
-export function HistoryScreen() {
-  const { currentSession, setCurrentScreen } = useInterview()
+interface HistoryScreenProps {
+  setCurrentScreen: (screen: any) => void;
+  currentSession: any;
+}
+
+export function HistoryScreen({ setCurrentScreen, currentSession }: HistoryScreenProps) {
   const [sessionsHistory, setSessionsHistory] = useState<InterviewSession[]>([])
   const [isLoading, setIsLoading] = useState(true)
 

@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { useInterview } from "@/hooks/use-interview"
+import type { InterviewSession, InterviewQuestion, AnalysisResult, AppScreen } from "@/types/interview"
 import {
   ArrowLeft,
   Edit3,
@@ -46,9 +46,27 @@ const getScoreGrade = (score: number) => {
   return "D"
 }
 
-export function AnalysisScreen() {
-  const { currentSession, currentQuestion, currentAnalysis, editAnswer, nextQuestion, endSession, setCurrentScreen, isAnalyzing } =
-    useInterview()
+interface AnalysisScreenProps {
+  currentSession: InterviewSession | null;
+  currentQuestion: InterviewQuestion | null;
+  currentAnalysis: AnalysisResult | null;
+  isAnalyzing: boolean;
+  editAnswer: () => void;
+  nextQuestion: () => void;
+  endSession: () => void;
+  setCurrentScreen: (screen: AppScreen) => void;
+}
+
+export function AnalysisScreen({
+  currentSession,
+  currentQuestion, 
+  currentAnalysis,
+  isAnalyzing,
+  editAnswer,
+  nextQuestion,
+  endSession,
+  setCurrentScreen
+}: AnalysisScreenProps) {
 
   // Debug logging
   console.log("🖥️ AnalysisScreen render:", {
@@ -56,7 +74,9 @@ export function AnalysisScreen() {
     hasCurrentQuestion: !!currentQuestion,
     hasCurrentAnalysis: !!currentAnalysis,
     isAnalyzing,
-    currentAnalysis
+    currentAnalysis,
+    currentAnalysisType: typeof currentAnalysis,
+    currentAnalysisKeys: currentAnalysis ? Object.keys(currentAnalysis) : null
   })
 
   const [animatedScore, setAnimatedScore] = useState(0)
@@ -107,8 +127,8 @@ export function AnalysisScreen() {
     return () => clearInterval(interval)
   }, [currentAnalysis])
 
-  // Show loading screen while analyzing or if we don't have required data
-  if (!currentSession || !currentQuestion || (isAnalyzing && !currentAnalysis)) {
+  // Show loading screen only if we don't have analysis data
+  if (!currentSession || !currentQuestion || !currentAnalysis) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="text-center space-y-6">
@@ -154,20 +174,7 @@ export function AnalysisScreen() {
     )
   }
 
-  // If we don't have analysis results and we're not analyzing, there's an error
-  if (!currentAnalysis) {
-    return (
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <div className="text-center space-y-4">
-          <h2 className="text-2xl font-bold text-destructive">분석 결과를 불러올 수 없습니다</h2>
-          <p className="text-muted-foreground">다시 시도해주세요.</p>
-          <Button onClick={() => setCurrentScreen("interview")}>
-            면접으로 돌아가기
-          </Button>
-        </div>
-      </div>
-    )
-  }
+  // This condition should never be reached now since we handle !currentAnalysis above
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -309,11 +316,37 @@ export function AnalysisScreen() {
               </ul>
             </div>
 
+            {/* 구체적인 첨삭 내용 */}
+            {currentAnalysis?.detailedFeedback && (
+              <div className="space-y-3">
+                <h4 className="font-semibold text-blue-700 flex items-center gap-2">
+                  <Edit3 className="w-4 h-4" />
+                  첨삭 내용
+                </h4>
+                <div className="bg-blue-50 rounded-lg p-3">
+                  <p className="text-sm leading-relaxed">{currentAnalysis.detailedFeedback}</p>
+                </div>
+              </div>
+            )}
+
+            {/* 개념 설명 */}
+            {currentAnalysis?.conceptualExplanation && (
+              <div className="space-y-3">
+                <h4 className="font-semibold text-purple-700 flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  질문의 의도와 개념
+                </h4>
+                <div className="bg-purple-50 rounded-lg p-3">
+                  <p className="text-sm leading-relaxed">{currentAnalysis.conceptualExplanation}</p>
+                </div>
+              </div>
+            )}
+
             {/* 추천 답변 예시 */}
             <Collapsible open={showSampleAnswer} onOpenChange={setShowSampleAnswer}>
               <CollapsibleTrigger asChild>
                 <Button variant="outline" className="w-full justify-between bg-transparent">
-                  추천 답변 예시 보기
+                  모범 답변 예시 보기
                   {showSampleAnswer ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </Button>
               </CollapsibleTrigger>

@@ -64,6 +64,8 @@ export function analyzeUserAnswer(
     strengths,
     improvements,
     sampleAnswer: idealAnswer, // Changed from idealAnswer to sampleAnswer
+    detailedFeedback: `답변의 ${Math.max(strengths.length, 1)}가지 강점이 있으나, ${Math.max(improvements.length, 1)}가지 개선점이 필요합니다. 특히 ${improvements[0] || '구체적인 경험 제시'}가 중요합니다.`,
+    conceptualExplanation: `이 질문은 ${jobCategory}의 핵심 역량을 평가하기 위한 것입니다. 실무 경험과 문제 해결 능력을 구체적으로 보여주는 것이 중요합니다.`,
     createdAt: new Date(),
   }
 }

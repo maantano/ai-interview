@@ -12,7 +12,14 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ArrowLeft, RefreshCw, Send, Clock, Sparkles, Database } from "lucide-react";
+import {
+  ArrowLeft,
+  RefreshCw,
+  Send,
+  Clock,
+  Sparkles,
+  Database,
+} from "lucide-react";
 import type { InterviewQuestion, InterviewSession } from "@/types/interview";
 
 const jobCategoryLabels = {
@@ -163,9 +170,13 @@ export function InterviewScreen({
             <Badge variant="secondary" className="text-sm">
               {jobLabel}
             </Badge>
-            <Badge 
-              variant={currentSession.aiGenerated ? "default" : "outline"} 
-              className={`text-xs ${currentSession.aiGenerated ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white" : ""}`}
+            <Badge
+              variant={currentSession.aiGenerated ? "default" : "outline"}
+              className={`text-xs ${
+                currentSession.aiGenerated
+                  ? "bg-gradient-to-r from-purple-500 to-blue-500 text-white"
+                  : ""
+              }`}
             >
               {currentSession.aiGenerated ? (
                 <div className="flex items-center gap-1">
@@ -225,7 +236,9 @@ export function InterviewScreen({
                 value={currentAnswer}
                 onChange={(e) => handleAnswerChange(e.target.value)}
                 className={`min-h-[150px] resize-none text-base leading-relaxed transition-colors ${
-                  hasValidationError ? "border-red-500 focus-visible:ring-red-500" : ""
+                  hasValidationError
+                    ? "border-red-500 focus-visible:ring-red-500"
+                    : ""
                 }`}
                 disabled={isAnalyzing}
               />
@@ -233,19 +246,24 @@ export function InterviewScreen({
                 {charCount}/{maxChars}
               </div>
             </div>
-            
+
             {/* Validation Error Message */}
             {hasValidationError && (
               <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-                <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">!</div>
-                답변은 최소 {minChars}글자 이상 작성해주세요. (현재 {answerLength}글자)
+                <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
+                  !
+                </div>
+                답변은 최소 {minChars}글자 이상 작성해주세요. (현재{" "}
+                {answerLength}글자)
               </div>
             )}
-            
+
             {/* API Error Message */}
             {error && (
               <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-                <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">!</div>
+                <div className="w-4 h-4 rounded-full bg-red-500 flex items-center justify-center text-white text-xs font-bold">
+                  !
+                </div>
                 {error}
               </div>
             )}
@@ -257,9 +275,7 @@ export function InterviewScreen({
                 disabled={!canAnalyze}
                 className={`flex-1 h-12 text-base font-semibold transition-all duration-300 ${
                   isAnalyzing ? "bg-primary/80" : ""
-                } ${
-                  !canAnalyze && answerLength > 0 ? "opacity-50" : ""
-                }`}
+                } ${!canAnalyze && answerLength > 0 ? "opacity-50" : ""}`}
                 size="lg"
               >
                 {isAnalyzing ? (
@@ -275,7 +291,9 @@ export function InterviewScreen({
                 ) : (
                   <div className="flex items-center gap-2">
                     <Send className="w-4 h-4" />
-                    {hasValidationError ? `답변 분석하기 (${minChars-answerLength}글자 더 필요)` : "답변 분석하기"}
+                    {hasValidationError
+                      ? `답변 분석하기 (${minChars - answerLength}글자 더 필요)`
+                      : "답변 분석하기"}
                   </div>
                 )}
               </Button>

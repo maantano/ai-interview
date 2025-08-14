@@ -24,88 +24,98 @@ export function useInterview() {
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisResult | null>(
     null
   );
+  
+  // Debug currentAnalysis state changes
+  useEffect(() => {
+    console.log("🔥 currentAnalysis state changed:", currentAnalysis?.id || "null");
+    console.log("🔥 Full currentAnalysis object:", currentAnalysis);
+    
+    // Analysis data changed - no need to manage isAnalyzing here
+    // The component will automatically show results when currentAnalysis is available
+  }, [currentAnalysis, isAnalyzing, currentScreen]);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-
   // Generate questions for a session or refill queue
-  const generateQuestionsForSession = useCallback(async (
-    session: InterviewSession,
-    isRefill = false
-  ): Promise<void> => {
-    try {
-      setIsLoading(true);
-      
-      // Try AI generation first
-      const response = await fetch('/api/ai/generate-questions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          category: session.category,
-          customCategory: session.customCategory,
-        }),
-      });
+  const generateQuestionsForSession = useCallback(
+    async (session: InterviewSession, isRefill = false): Promise<void> => {
+      try {
+        setIsLoading(true);
 
-      const result = await response.json();
+        // Try AI generation first
+        const response = await fetch("/api/ai/generate-questions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            category: session.category,
+            customCategory: session.customCategory,
+          }),
+        });
 
-      if (result.success && result.questions.length > 0) {
-        // Update session with AI-generated questions
+        const result = await response.json();
+
+        if (result.success && result.questions.length > 0) {
+          // Update session with AI-generated questions
+          const updatedSession = {
+            ...session,
+            questionQueue: isRefill
+              ? [...session.questionQueue, ...result.questions]
+              : result.questions,
+            aiGenerated: result.metadata.aiGenerated,
+          };
+
+          setCurrentSession(updatedSession);
+          if (!isRefill) {
+            setCurrentQuestion(result.questions[0]);
+          }
+          storage.saveCurrentSession(updatedSession);
+
+          if (currentScreen !== "interview" && !isRefill) {
+            setCurrentScreen("interview");
+          }
+        } else {
+          throw new Error(result.error || "Failed to generate questions");
+        }
+      } catch (error) {
+        console.error("Failed to generate questions, using fallback:", error);
+
+        // Fallback to mock questions
+        const questions = mockQuestions[session.category];
+        if (!questions || questions.length === 0) {
+          throw new Error(
+            `해당 직무의 질문을 찾을 수 없습니다: ${session.category}`
+          );
+        }
+
+        // Select 10 random questions
+        const shuffled = [...questions].sort(() => 0.5 - Math.random());
+        const selectedQuestions = shuffled.slice(0, 10);
+
         const updatedSession = {
           ...session,
-          questionQueue: isRefill 
-            ? [...session.questionQueue, ...result.questions] 
-            : result.questions,
-          aiGenerated: result.metadata.aiGenerated,
+          questionQueue: isRefill
+            ? [...session.questionQueue, ...selectedQuestions]
+            : selectedQuestions,
+          aiGenerated: false,
         };
-        
+
         setCurrentSession(updatedSession);
         if (!isRefill) {
-          setCurrentQuestion(result.questions[0]);
+          setCurrentQuestion(selectedQuestions[0]);
         }
         storage.saveCurrentSession(updatedSession);
-        
+
         if (currentScreen !== "interview" && !isRefill) {
           setCurrentScreen("interview");
         }
-      } else {
-        throw new Error(result.error || "Failed to generate questions");
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("Failed to generate questions, using fallback:", error);
-      
-      // Fallback to mock questions
-      const questions = mockQuestions[session.category];
-      if (!questions || questions.length === 0) {
-        throw new Error(`해당 직무의 질문을 찾을 수 없습니다: ${session.category}`);
-      }
-
-      // Select 10 random questions
-      const shuffled = [...questions].sort(() => 0.5 - Math.random());
-      const selectedQuestions = shuffled.slice(0, 10);
-
-      const updatedSession = {
-        ...session,
-        questionQueue: isRefill 
-          ? [...session.questionQueue, ...selectedQuestions] 
-          : selectedQuestions,
-        aiGenerated: false,
-      };
-
-      setCurrentSession(updatedSession);
-      if (!isRefill) {
-        setCurrentQuestion(selectedQuestions[0]);
-      }
-      storage.saveCurrentSession(updatedSession);
-      
-      if (currentScreen !== "interview" && !isRefill) {
-        setCurrentScreen("interview");
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [currentScreen]);
+    },
+    [currentScreen]
+  );
 
   // Load saved session on mount
   useEffect(() => {
@@ -117,13 +127,20 @@ export function useInterview() {
         const savedSession = storage.getCurrentSession();
         if (savedSession) {
           setCurrentSession(savedSession);
-          
+
           // If session has a question queue, find current question
-          if (savedSession.questionQueue && savedSession.questionQueue.length > 0) {
+          if (
+            savedSession.questionQueue &&
+            savedSession.questionQueue.length > 0
+          ) {
             // Find the current question (first unanswered one)
-            const answeredQuestionIds = savedSession.results.map(r => r.questionId);
-            const currentQ = savedSession.questionQueue.find(q => !answeredQuestionIds.includes(q.id));
-            
+            const answeredQuestionIds = savedSession.results.map(
+              (r) => r.questionId
+            );
+            const currentQ = savedSession.questionQueue.find(
+              (q) => !answeredQuestionIds.includes(q.id)
+            );
+
             if (currentQ) {
               setCurrentQuestion(currentQ);
               setCurrentScreen("interview");
@@ -159,7 +176,7 @@ export function useInterview() {
       try {
         setError(null);
         setIsLoading(true);
-        
+
         // Show loading screen immediately
         setCurrentScreen("loading");
 
@@ -200,32 +217,56 @@ export function useInterview() {
   const generateNewQuestion = useCallback(async () => {
     try {
       setError(null);
-      console.log("🔄 generateNewQuestion called");
+      console.log("🔄 [DEBUG] generateNewQuestion called");
+      console.log("🔍 [DEBUG] Current session:", {
+        hasSession: !!currentSession,
+        hasQuestionQueue: !!currentSession?.questionQueue,
+        queueLength: currentSession?.questionQueue?.length || 0,
+      });
 
       if (!currentSession?.questionQueue) {
+        console.error("❌ [DEBUG] No question queue found");
         throw new Error("질문 큐를 찾을 수 없습니다.");
       }
 
       const queue = currentSession.questionQueue;
-      const answeredQuestionIds = currentSession.results.map(r => r.questionId);
-      const unansweredQuestions = queue.filter(q => !answeredQuestionIds.includes(q.id));
-      
-      console.log("📊 Question queue status:", {
+      const answeredQuestionIds = currentSession.results.map(
+        (r) => r.questionId
+      );
+      const unansweredQuestions = queue.filter(
+        (q) => !answeredQuestionIds.includes(q.id)
+      );
+      console.log("🔍 [DEBUG] queue:", queue);
+      console.log("🔍 [DEBUG] answeredQuestionIds:", answeredQuestionIds);
+      console.log("🔍 [DEBUG] unansweredQuestions:", unansweredQuestions);
+
+      console.log("📊 [DEBUG] Question queue status:", {
         totalQuestions: queue.length,
         answeredCount: answeredQuestionIds.length,
-        unansweredCount: unansweredQuestions.length
+        unansweredCount: unansweredQuestions.length,
+        answeredIds: answeredQuestionIds,
+        queueIds: queue.map((q) => q.id),
       });
-      
+
       // First, try to serve from existing queue
-      const nextQuestion = unansweredQuestions[0];
-      
+      const randomIndex = Math.floor(
+        Math.random() * unansweredQuestions.length
+      );
+      const nextQuestion = unansweredQuestions[randomIndex];
+
       if (nextQuestion) {
-        console.log("✅ Found next question from queue:", nextQuestion.question);
+        console.log(
+          "✅ [DEBUG] Found next question from queue:",
+          nextQuestion.question
+        );
+        console.log(
+          "🔄 [DEBUG] Setting new question and clearing answer/analysis"
+        );
         // Set the next question from queue immediately
         setCurrentQuestion(nextQuestion);
         setCurrentAnswer("");
         setCurrentAnalysis(null);
-        
+
         // Check if we need to refill the queue (less than 3 unanswered questions remaining)
         if (unansweredQuestions.length <= 3) {
           try {
@@ -255,30 +296,48 @@ export function useInterview() {
   // 답변 분석
   const analyzeAnswer = useCallback(
     async (retryCount = 0) => {
+      console.log("🚀 [DEBUG] analyzeAnswer function called");
+      console.log("🔍 [DEBUG] Current state:", {
+        hasCurrentQuestion: !!currentQuestion,
+        hasCurrentAnswer: !!currentAnswer.trim(),
+        hasCurrentSession: !!currentSession,
+        answerLength: currentAnswer.trim().length,
+      });
+
       if (!currentQuestion || !currentAnswer.trim() || !currentSession) {
+        console.error("❌ [DEBUG] Missing required data");
         setError("답변을 분석하기 위한 필수 정보가 부족합니다.");
         return;
       }
 
       // Validate answer length (minimum 10 characters)
       if (currentAnswer.trim().length < 10) {
+        console.error(
+          "❌ [DEBUG] Answer too short:",
+          currentAnswer.trim().length
+        );
         setError("답변은 최소 10글자 이상 작성해주세요.");
         return;
       }
 
-      // IMMEDIATELY navigate to analysis screen with loading state
+      console.log("✅ [DEBUG] Validation passed, starting analysis...");
+
+      // IMMEDIATELY go to analysis screen with loading state
       setIsAnalyzing(true);
       setError(null);
       setCurrentAnalysis(null); // Clear previous analysis
-      setCurrentScreen("analysis"); // Navigate immediately
+      setCurrentScreen("analysis"); // Go to analysis screen immediately
+      console.log(
+        "🔄 [DEBUG] Moved to analysis screen with loading state"
+      );
 
       try {
         // Call AI analysis API
         console.log("🚀 Calling analyze-answer API...");
-        const response = await fetch('/api/ai/analyze-answer', {
-          method: 'POST',
+        const response = await fetch("/api/ai/analyze-answer", {
+          method: "POST",
           headers: {
-            'Content-Type': 'application/json',
+            "Content-Type": "application/json",
           },
           body: JSON.stringify({
             questionId: currentQuestion.id,
@@ -290,7 +349,8 @@ export function useInterview() {
         });
 
         console.log("📡 API Response status:", response.status);
-        
+        console.log("🔍 Response OK:", response.ok);
+
         // Check if response is ok before parsing JSON
         if (!response.ok) {
           const errorText = await response.text();
@@ -309,55 +369,68 @@ export function useInterview() {
 
         if (result.success) {
           const analysis = result.analysis;
-          console.log("✅ Analysis received:", analysis);
+          console.log("✅ [DEBUG] Analysis received:", analysis);
 
           // Validate analysis structure before using it
-          if (!analysis || typeof analysis !== 'object') {
-            console.error("❌ Invalid analysis structure:", analysis);
+          if (!analysis || typeof analysis !== "object") {
+            console.error("❌ [DEBUG] Invalid analysis structure:", analysis);
             throw new Error("분석 결과의 형식이 올바르지 않습니다.");
           }
 
           // Validate required fields
-          if (!analysis.id || !analysis.questionId || !analysis.scores || typeof analysis.totalScore !== 'number') {
-            console.error("❌ Missing required analysis fields:", analysis);
+          if (
+            !analysis.id ||
+            !analysis.questionId ||
+            !analysis.scores ||
+            typeof analysis.totalScore !== "number"
+          ) {
+            console.error(
+              "❌ [DEBUG] Missing required analysis fields:",
+              analysis
+            );
             throw new Error("분석 결과에 필요한 정보가 누락되었습니다.");
           }
 
           // Fix date handling - convert string dates back to Date objects
-          if (typeof analysis.createdAt === 'string') {
+          if (typeof analysis.createdAt === "string") {
             analysis.createdAt = new Date(analysis.createdAt);
           }
 
-          console.log("🔍 Analysis validation passed");
+          console.log("🔍 [DEBUG] Analysis validation passed");
 
+          console.log("💾 [DEBUG] Setting current session and analysis...");
+          
           // Update session with new result
-          const updatedSession = {
+          const sessionUpdate = {
             ...currentSession,
             results: [...currentSession.results, analysis],
           };
-
-          console.log("💾 Setting current session...", updatedSession);
-          setCurrentSession(updatedSession);
-          console.log("🎯 Setting current analysis...", analysis);
-          setCurrentAnalysis(analysis); // This will update the analysis screen with results
+          
+          // Set both states together
+          console.log("🔥 BEFORE setCurrentSession:", currentSession?.results?.length);
+          console.log("🔥 BEFORE setCurrentAnalysis:", currentAnalysis);
+          setCurrentSession(sessionUpdate);
+          setCurrentAnalysis(analysis);
+          console.log("🔥 AFTER setState calls - analysis should be:", analysis?.id);
 
           // Save to storage
           try {
-            storage.saveCurrentSession(updatedSession);
+            storage.saveCurrentSession(sessionUpdate);
             console.log("✅ Session saved to storage");
           } catch (storageError) {
             console.warn("Failed to save session to storage:", storageError);
           }
 
-          console.log("🎉 Analysis complete - staying on analysis screen");
-          // Analysis screen is already showing, results will update automatically
+          // Analysis data is set, useEffect will stop the loading state
+          // Force a re-render by setting isAnalyzing to false
+          console.log("💾 Analysis data set, forcing re-render...");
+          setIsAnalyzing(false);
         } else {
           // Check if this is a validation error (400 status)
           if (response.status === 400) {
-            // For validation errors, show error message but don't navigate away from interview screen
+            // For validation errors, show error message but stay on interview screen
             console.log("❌ Validation error:", result.error);
             setError(result.error || "입력 값이 올바르지 않습니다.");
-            setCurrentScreen("interview"); // Stay on interview screen for validation errors
             return;
           }
           console.log("❌ API error:", result.error);
@@ -365,13 +438,13 @@ export function useInterview() {
         }
       } catch (error) {
         console.error("❌ Analysis failed with error:", error);
-        
+
         // Log the exact point where the error occurred
         if (error instanceof Error) {
           console.error("❌ Error details:", {
             message: error.message,
             stack: error.stack,
-            name: error.name
+            name: error.name,
           });
         }
 
@@ -393,11 +466,13 @@ export function useInterview() {
             ? error.message
             : "답변 분석 중 오류가 발생했습니다. 다시 시도해주세요."
         );
-        
-        // On error, return to interview screen
-        setCurrentScreen("interview");
-      } finally {
+
+        // On error, stay on interview screen and stop analyzing
+        console.log("❌ Staying on interview screen due to error");
         setIsAnalyzing(false);
+      } finally {
+        // For success case, useEffect will handle isAnalyzing and navigation
+        console.log("🔄 Analysis function complete");
       }
     },
     [currentQuestion, currentAnswer, currentSession]
