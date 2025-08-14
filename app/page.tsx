@@ -11,16 +11,16 @@ import GATracker from "@/components/ga-tracker";
 
 export default function HomePage() {
   const interviewState = useInterview();
-  
+
   // Debug logging
-  console.log("🏠 [DEBUG] HomePage render:", {
-    currentScreen: interviewState.currentScreen,
-    hasCurrentSession: !!interviewState.currentSession,
-    hasCurrentQuestion: !!interviewState.currentQuestion,
-    hasCurrentAnalysis: !!interviewState.currentAnalysis,
-    isAnalyzing: interviewState.isAnalyzing,
-    error: interviewState.error
-  });
+  // console.log("🏠 [DEBUG] HomePage render:", {
+  //   currentScreen: interviewState.currentScreen,
+  //   hasCurrentSession: !!interviewState.currentSession,
+  //   hasCurrentQuestion: !!interviewState.currentQuestion,
+  //   hasCurrentAnalysis: !!interviewState.currentAnalysis,
+  //   isAnalyzing: interviewState.isAnalyzing,
+  //   error: interviewState.error
+  // });
 
   return (
     <ErrorBoundary>
@@ -30,12 +30,13 @@ export default function HomePage() {
           <JobSelectionScreen startSession={interviewState.startSession} />
         )}
         {interviewState.currentScreen === "loading" && (
-          <LoadingScreen 
-            jobCategory={interviewState.currentSession?.customCategory || (
-              interviewState.currentSession?.category === "other" 
-                ? "기타" 
-                : interviewState.currentSession?.category
-            )} 
+          <LoadingScreen
+            jobCategory={
+              interviewState.currentSession?.customCategory ||
+              (interviewState.currentSession?.category === "other"
+                ? "기타"
+                : interviewState.currentSession?.category)
+            }
           />
         )}
         {interviewState.currentScreen === "interview" && (
@@ -53,7 +54,7 @@ export default function HomePage() {
           />
         )}
         {interviewState.currentScreen === "analysis" && (
-          <AnalysisScreen 
+          <AnalysisScreen
             currentSession={interviewState.currentSession}
             currentQuestion={interviewState.currentQuestion}
             currentAnalysis={interviewState.currentAnalysis}
@@ -65,7 +66,7 @@ export default function HomePage() {
           />
         )}
         {interviewState.currentScreen === "history" && (
-          <HistoryScreen 
+          <HistoryScreen
             setCurrentScreen={interviewState.setCurrentScreen}
             currentSession={interviewState.currentSession}
           />
