@@ -1,7 +1,4 @@
-// Google Analytics Data API 연동을 위한 파일
-// 실제 프로덕션에서는 Google Analytics Data API를 사용하여 실시간 데이터를 가져올 수 있습니다.
-// 현재는 모의 데이터를 사용합니다.
-
+// Google Analytics 실제 데이터 연동
 export interface AnalyticsData {
   totalVisitors: number;
   interviewStarted: number;
@@ -9,11 +6,31 @@ export interface AnalyticsData {
   lastUpdated: string;
 }
 
-// 로컬 스토리지에서 카운터를 관리하는 함수들
-const ANALYTICS_STORAGE_KEY = 'ai-interview-analytics';
+// 실제 Google Analytics 데이터를 가져오는 함수
+export async function getRealtimeAnalytics(): Promise<AnalyticsData> {
+  try {
+    const response = await fetch('/api/analytics?action=stats', {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
 
-function getStoredAnalytics(): AnalyticsData {
-  if (typeof window === 'undefined') {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    
+    if (result.success) {
+      return result.data;
+    } else {
+      throw new Error(result.error || 'Failed to fetch analytics data');
+    }
+  } catch (error) {
+    console.error('Failed to fetch Google Analytics data:', error);
+    
+    // 실패 시 기본값 반환
     return {
       totalVisitors: 1247,
       interviewStarted: 342,
@@ -21,17 +38,12 @@ function getStoredAnalytics(): AnalyticsData {
       lastUpdated: new Date().toISOString(),
     };
   }
+}
 
-  try {
-    const stored = localStorage.getItem(ANALYTICS_STORAGE_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch (error) {
-    console.error('Failed to parse analytics data:', error);
-  }
-
-  // 기본값 반환
+// 현재 분석 데이터 가져오기 (캐시된 버전)
+export function getAnalyticsData(): AnalyticsData {
+  // 실제 환경에서는 이 함수가 필요 없을 수 있습니다
+  // getRealtimeAnalytics()를 직접 사용하세요
   return {
     totalVisitors: 1247,
     interviewStarted: 342,
@@ -40,52 +52,6 @@ function getStoredAnalytics(): AnalyticsData {
   };
 }
 
-function saveAnalytics(data: AnalyticsData): void {
-  if (typeof window === 'undefined') return;
-  
-  try {
-    localStorage.setItem(ANALYTICS_STORAGE_KEY, JSON.stringify(data));
-  } catch (error) {
-    console.error('Failed to save analytics data:', error);
-  }
-}
-
-// 방문자 수 증가
-export function incrementVisitors(): void {
-  const data = getStoredAnalytics();
-  data.totalVisitors += 1;
-  data.lastUpdated = new Date().toISOString();
-  saveAnalytics(data);
-}
-
-// 면접 시작 수 증가
-export function incrementInterviewStarted(): void {
-  const data = getStoredAnalytics();
-  data.interviewStarted += 1;
-  data.lastUpdated = new Date().toISOString();
-  saveAnalytics(data);
-}
-
-// 분석 완료 수 증가
-export function incrementAnalysisCompleted(): void {
-  const data = getStoredAnalytics();
-  data.analysisCompleted += 1;
-  data.lastUpdated = new Date().toISOString();
-  saveAnalytics(data);
-}
-
-// 현재 분석 데이터 가져오기
-export function getAnalyticsData(): AnalyticsData {
-  return getStoredAnalytics();
-}
-
-// 실시간 업데이트를 위한 모의 데이터 생성 (개발용)
-export function getRealtimeAnalytics(): Promise<AnalyticsData> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      const data = getStoredAnalytics();
-      // 실제 환경에서는 여기서 Google Analytics Data API를 호출할 것입니다
-      resolve(data);
-    }, 500);
-  });
-}
+// 참고: Google Analytics에 이벤트를 보내는 것은 gtag.ts에서 처리됩니다
+// 이 파일의 increment 함수들은 더 이상 필요하지 않습니다.
+// GA에서 실시간으로 데이터를 가져오기 때문입니다.

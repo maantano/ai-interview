@@ -11,7 +11,6 @@ import type {
 import { mockQuestions } from "@/data/mock-questions";
 import { storage } from "@/lib/storage";
 import * as gtag from "@/lib/gtag";
-import { incrementAnalysisCompleted } from "@/lib/analytics-api";
 
 export function useInterview() {
   const [currentScreen, setCurrentScreen] =
@@ -449,9 +448,6 @@ export function useInterview() {
             label: currentSession.category,
             value: analysis.totalScore,
           });
-
-          // 분석 완료 카운터 증가
-          incrementAnalysisCompleted();
         } else {
           // Check if this is a validation error (400 status)
           if (response.status === 400) {

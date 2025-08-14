@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { AnalyticsDashboard } from "@/components/analytics-dashboard";
-import { incrementVisitors, incrementInterviewStarted } from "@/lib/analytics-api";
 import type { JobCategory } from "@/types/interview";
 
 const jobOptions = [
@@ -83,18 +82,10 @@ export function JobSelectionScreen({ startSession }: JobSelectionScreenProps) {
   const [customJob, setCustomJob] = useState("");
   const [isStarting, setIsStarting] = useState(false);
 
-  // 페이지 방문 시 방문자 수 증가
-  useEffect(() => {
-    incrementVisitors();
-  }, []);
-
   const handleStart = async () => {
     if (!selectedJob) return;
 
     setIsStarting(true);
-
-    // 면접 시작 수 증가
-    incrementInterviewStarted();
 
     await new Promise((resolve) => setTimeout(resolve, 500));
 
