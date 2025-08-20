@@ -21,11 +21,11 @@ interface VisitorLog {
   [date: string]: string[]; // date -> array of IP addresses
 }
 
-// 초기 데이터
+// 초기 데이터 (로컬 데이터 기반)
 const DEFAULT_DATA: CounterData = {
-  totalVisitors: 0,
-  interviewStarted: 0,
-  analysisCompleted: 0,
+  totalVisitors: 65,
+  interviewStarted: 12,
+  analysisCompleted: 4,
   lastUpdated: new Date().toISOString(),
 };
 
