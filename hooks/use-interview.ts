@@ -10,7 +10,7 @@ import type {
 } from "@/types/interview";
 import { mockQuestions } from "@/data/mock-questions";
 import { storage } from "@/lib/storage";
-// GA4 events are now sent directly via window.gtag
+import { event as gtag_event } from "@/lib/gtag";
 
 export function useInterview() {
   const [currentScreen, setCurrentScreen] =
@@ -188,12 +188,11 @@ export function useInterview() {
         storage.saveCurrentSession(newSession);
 
         // Google Analytics: Track session start
-        if (typeof window !== 'undefined' && window.gtag) {
-          window.gtag('event', 'session_start', {
-            event_category: 'interview',
-            event_label: category,
-          });
-        }
+        gtag_event({
+          action: 'session_start',
+          category: 'interview',
+          label: category,
+        });
 
         // Generate questions for the new session
         await generateQuestionsForSession(newSession);
@@ -282,12 +281,11 @@ export function useInterview() {
         setCurrentAnalysis(null);
 
         // Google Analytics: Track new question
-        if (typeof window !== 'undefined' && window.gtag) {
-          window.gtag('event', 'new_question', {
-            event_category: 'interview',
-            event_label: currentSession.category,
-          });
-        }
+        gtag_event({
+          action: 'new_question',
+          category: 'interview',
+          label: currentSession.category,
+        });
 
         // Check if we need to refill the queue (less than 3 unanswered questions remaining)
         if (unansweredQuestions.length <= 3) {
@@ -424,44 +422,14 @@ export function useInterview() {
             analysisData: analysis,
           });
 
-          // GA4 이벤트 전송 - gtag를 직접 호출
-          if (typeof window !== 'undefined' && window.gtag) {
-            const score = analysis.totalScore ? Math.round(analysis.totalScore) : 0;
-            
-            console.log("📤 Sending GA event directly:", {
-              event: "answer_analyzed",
-              category: currentSession.category,
-              score: score
-            });
-            
-            // GA4 형식으로 직접 전송
-            window.gtag('event', 'answer_analyzed', {
-              event_category: 'interview',
-              event_label: currentSession.category,
-              value: score
-            });
-            
-            // 백업: Measurement Protocol로도 전송
-            try {
-              fetch(`https://www.google-analytics.com/mp/collect?measurement_id=G-WQNEQX1T08&api_secret=your_api_secret`, {
-                method: 'POST',
-                body: JSON.stringify({
-                  client_id: 'anonymous',
-                  events: [{
-                    name: 'answer_analyzed',
-                    parameters: {
-                      event_category: 'interview',
-                      event_label: currentSession.category,
-                      value: score
-                    }
-                  }]
-                })
-              });
-              console.log("📡 Backup GA event sent via Measurement Protocol");
-            } catch (error) {
-              console.log("Backup GA failed:", error);
-            }
-          }
+          // GA4 이벤트 전송
+          const score = analysis.totalScore ? Math.round(analysis.totalScore) : 0;
+          gtag_event({
+            action: 'answer_analyzed',
+            category: 'interview',
+            label: currentSession.category,
+            value: score
+          });
         } else {
           // Check if this is a validation error (400 status)
           if (response.status === 400) {
@@ -526,13 +494,12 @@ export function useInterview() {
         storage.saveToHistory(currentSession);
 
         // Google Analytics: Track session completion
-        if (typeof window !== 'undefined' && window.gtag) {
-          window.gtag('event', 'session_completed', {
-            event_category: 'interview',
-            event_label: currentSession.category,
-            value: currentSession.results.length,
-          });
-        }
+        gtag_event({
+          action: 'session_completed',
+          category: 'interview',
+          label: currentSession.category,
+          value: currentSession.results.length,
+        });
       }
       storage.clearCurrentSession();
       setCurrentSession(null);
