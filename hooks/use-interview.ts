@@ -227,11 +227,53 @@ export function useInterview() {
         (q) => !answeredQuestionIds.includes(q.id)
       );
 
-      // First, try to serve from existing queue
-      const randomIndex = Math.floor(
-        Math.random() * unansweredQuestions.length
-      );
-      const nextQuestion = unansweredQuestions[randomIndex];
+      // 더 지능적인 질문 선택 로직
+      let nextQuestion: InterviewQuestion | undefined;
+      
+      if (unansweredQuestions.length > 0) {
+        // 이미 답변한 질문들의 난이도 분석
+        const answeredDifficulties = currentSession.results.map(r => 
+          queue.find(q => q.id === r.questionId)?.difficulty
+        ).filter(Boolean);
+        
+        // 현재는 사용하지 않지만 향후 통계를 위해 주석 처리
+        // const difficultyCount = {
+        //   easy: answeredDifficulties.filter(d => d === 'easy').length,
+        //   medium: answeredDifficulties.filter(d => d === 'medium').length,
+        //   hard: answeredDifficulties.filter(d => d === 'hard').length
+        // };
+        
+        // 다음 질문 난이도 우선순위 결정
+        let preferredDifficulty: string[] = [];
+        const totalAnswered = answeredDifficulties.length;
+        
+        if (totalAnswered < 3) {
+          // 처음 3문제는 쉬운 문제 우선
+          preferredDifficulty = ['easy', 'medium', 'hard'];
+        } else if (totalAnswered < 6) {
+          // 4-6문제는 중간 난이도 우선
+          preferredDifficulty = ['medium', 'easy', 'hard'];
+        } else {
+          // 7문제 이후는 균형적으로
+          preferredDifficulty = ['medium', 'hard', 'easy'];
+        }
+        
+        // 우선순위에 따라 질문 선택
+        for (const difficulty of preferredDifficulty) {
+          const questionsOfDifficulty = unansweredQuestions.filter(q => q.difficulty === difficulty);
+          if (questionsOfDifficulty.length > 0) {
+            const randomIndex = Math.floor(Math.random() * questionsOfDifficulty.length);
+            nextQuestion = questionsOfDifficulty[randomIndex];
+            break;
+          }
+        }
+        
+        // 만약 우선순위로 찾지 못했다면 랜덤 선택
+        if (!nextQuestion) {
+          const randomIndex = Math.floor(Math.random() * unansweredQuestions.length);
+          nextQuestion = unansweredQuestions[randomIndex];
+        }
+      }
 
       if (nextQuestion) {
         // Set the next question from queue immediately
@@ -416,8 +458,8 @@ export function useInterview() {
                 })
               });
               console.log("📡 Backup GA event sent via Measurement Protocol");
-            } catch (err) {
-              console.log("Backup GA failed:", err);
+            } catch (error) {
+              console.log("Backup GA failed:", error);
             }
           }
         } else {
@@ -498,7 +540,7 @@ export function useInterview() {
       setCurrentAnswer("");
       setCurrentAnalysis(null);
       setCurrentScreen("job-selection");
-    } catch (err) {
+    } catch {
       // Still proceed with cleanup even if storage fails
       setCurrentSession(null);
       setCurrentQuestion(null);
@@ -516,7 +558,8 @@ export function useInterview() {
     try {
       setError(null);
       storage.clearCurrentSession();
-    } catch (err) {
+    } catch {
+      // Error handling can be added here if needed
     } finally {
       setCurrentSession(null);
       setCurrentQuestion(null);
