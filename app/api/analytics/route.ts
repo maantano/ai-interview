@@ -72,11 +72,12 @@ async function getGoogleAnalyticsData() {
     let pageViews = 0;
 
     // 모든 이벤트 확인
+    console.log("📊 GA Events found:");
     eventsResponse.data.rows?.forEach((row) => {
       const eventName = row.dimensionValues?.[0]?.value;
       const eventCount = parseInt(row.metricValues?.[0]?.value || "0");
 
-      // console.log(`Event found: ${eventName} = ${eventCount}`);
+      console.log(`  - ${eventName}: ${eventCount}`);
 
       if (eventName === "session_start") {
         interviewStarted = eventCount; // 면접 시작 버튼 클릭 누적 수
@@ -100,7 +101,7 @@ async function getGoogleAnalyticsData() {
       lastUpdated: kstTime.toISOString(),
     };
 
-    // console.log('Final cumulative GA data:', finalData);
+    console.log('📈 Final cumulative GA data:', finalData);
     return finalData;
   } catch (error) {
     console.error("Google Analytics API error:", error);

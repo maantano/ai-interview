@@ -10,7 +10,7 @@ import type {
 } from "@/types/interview";
 import { mockQuestions } from "@/data/mock-questions";
 import { storage } from "@/lib/storage";
-import * as gtag from "@/lib/gtag";
+// GA4 events are now sent directly via window.gtag
 
 export function useInterview() {
   const [currentScreen, setCurrentScreen] =
@@ -25,7 +25,6 @@ export function useInterview() {
   const [currentAnalysis, setCurrentAnalysis] = useState<AnalysisResult | null>(
     null
   );
-  
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -72,7 +71,7 @@ export function useInterview() {
           throw new Error(result.error || "Failed to generate questions");
         }
       } catch (error) {
-
+        console.error("🔄 GA Event: generate_questions - Error:", error);
         // Fallback to mock questions
         const questions = mockQuestions[session.category];
         if (!questions || questions.length === 0) {
@@ -189,11 +188,12 @@ export function useInterview() {
         storage.saveCurrentSession(newSession);
 
         // Google Analytics: Track session start
-        gtag.event({
-          action: "session_start",
-          category: "interview",
-          label: category,
-        });
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'session_start', {
+            event_category: 'interview',
+            event_label: category,
+          });
+        }
 
         // Generate questions for the new session
         await generateQuestionsForSession(newSession);
@@ -227,7 +227,6 @@ export function useInterview() {
         (q) => !answeredQuestionIds.includes(q.id)
       );
 
-
       // First, try to serve from existing queue
       const randomIndex = Math.floor(
         Math.random() * unansweredQuestions.length
@@ -241,11 +240,12 @@ export function useInterview() {
         setCurrentAnalysis(null);
 
         // Google Analytics: Track new question
-        gtag.event({
-          action: "new_question",
-          category: "interview",
-          label: currentSession.category,
-        });
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'new_question', {
+            event_category: 'interview',
+            event_label: currentSession.category,
+          });
+        }
 
         // Check if we need to refill the queue (less than 3 unanswered questions remaining)
         if (unansweredQuestions.length <= 3) {
@@ -253,6 +253,10 @@ export function useInterview() {
             // Refill queue in background without blocking UI
             await generateQuestionsForSession(currentSession, true);
           } catch (refillError) {
+            console.error(
+              "🔄 GA Event: new_question - Refill error:",
+              refillError
+            );
             // Continue with existing questions even if refill fails
           }
         }
@@ -272,7 +276,6 @@ export function useInterview() {
   // 답변 분석
   const analyzeAnswer = useCallback(
     async (retryCount = 0) => {
-
       if (!currentQuestion || !currentAnswer.trim() || !currentSession) {
         setError("답변을 분석하기 위한 필수 정보가 부족합니다.");
         return;
@@ -283,7 +286,6 @@ export function useInterview() {
         setError("답변은 최소 10글자 이상 작성해주세요.");
         return;
       }
-
 
       // IMMEDIATELY go to analysis screen with loading state
       setIsAnalyzing(true);
@@ -307,7 +309,6 @@ export function useInterview() {
           }),
         });
 
-
         // Check if response is ok before parsing JSON
         if (!response.ok) {
           const errorText = await response.text();
@@ -318,10 +319,12 @@ export function useInterview() {
         try {
           result = await response.json();
         } catch (parseError) {
+          console.error(
+            "🔄 GA Event: answer_analyzed - Parse error:",
+            parseError
+          );
           throw new Error("서버 응답을 해석할 수 없습니다.");
         }
-
-        
         if (result.success) {
           const analysis = result.analysis;
 
@@ -345,14 +348,12 @@ export function useInterview() {
             analysis.createdAt = new Date(analysis.createdAt);
           }
 
-
-          
           // Update session with new result
           const sessionUpdate = {
             ...currentSession,
             results: [...currentSession.results, analysis],
           };
-          
+
           // Set both states together
           setCurrentSession(sessionUpdate);
           setCurrentAnalysis(analysis);
@@ -361,6 +362,10 @@ export function useInterview() {
           try {
             storage.saveCurrentSession(sessionUpdate);
           } catch (storageError) {
+            console.error(
+              "🔄 GA Event: answer_analyzed - Storage error:",
+              storageError
+            );
           }
 
           // Analysis data is set, useEffect will stop the loading state
@@ -368,14 +373,54 @@ export function useInterview() {
           setIsAnalyzing(false);
 
           // Google Analytics: Track answer analysis success
-          gtag.event({
+          console.log("📊 GA Event: answer_analyzed", {
             action: "answer_analyzed",
             category: "interview",
             label: currentSession.category,
             value: analysis.totalScore,
+            hasValue: analysis.totalScore !== undefined,
+            analysisData: analysis,
           });
+
+          // GA4 이벤트 전송 - gtag를 직접 호출
+          if (typeof window !== 'undefined' && window.gtag) {
+            const score = analysis.totalScore ? Math.round(analysis.totalScore) : 0;
+            
+            console.log("📤 Sending GA event directly:", {
+              event: "answer_analyzed",
+              category: currentSession.category,
+              score: score
+            });
+            
+            // GA4 형식으로 직접 전송
+            window.gtag('event', 'answer_analyzed', {
+              event_category: 'interview',
+              event_label: currentSession.category,
+              value: score
+            });
+            
+            // 백업: Measurement Protocol로도 전송
+            try {
+              fetch(`https://www.google-analytics.com/mp/collect?measurement_id=G-WQNEQX1T08&api_secret=your_api_secret`, {
+                method: 'POST',
+                body: JSON.stringify({
+                  client_id: 'anonymous',
+                  events: [{
+                    name: 'answer_analyzed',
+                    parameters: {
+                      event_category: 'interview',
+                      event_label: currentSession.category,
+                      value: score
+                    }
+                  }]
+                })
+              });
+              console.log("📡 Backup GA event sent via Measurement Protocol");
+            } catch (err) {
+              console.log("Backup GA failed:", err);
+            }
+          }
         } else {
-          
           // Check if this is a validation error (400 status)
           if (response.status === 400) {
             // For validation errors, show error message but stay on interview screen
@@ -385,7 +430,6 @@ export function useInterview() {
           throw new Error(result.error || "Analysis failed");
         }
       } catch (error) {
-
         // Log the exact point where the error occurred
         if (error instanceof Error) {
           // Error details available for debugging
@@ -438,14 +482,15 @@ export function useInterview() {
 
       if (currentSession && currentSession.results.length > 0) {
         storage.saveToHistory(currentSession);
-        
+
         // Google Analytics: Track session completion
-        gtag.event({
-          action: "session_completed",
-          category: "interview",
-          label: currentSession.category,
-          value: currentSession.results.length,
-        });
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'session_completed', {
+            event_category: 'interview',
+            event_label: currentSession.category,
+            value: currentSession.results.length,
+          });
+        }
       }
       storage.clearCurrentSession();
       setCurrentSession(null);
