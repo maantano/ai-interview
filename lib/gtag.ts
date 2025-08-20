@@ -30,16 +30,27 @@ export const event = ({
   });
 
   if (typeof window !== 'undefined' && GA_MEASUREMENT_ID && window.gtag) {
-    // GA4 이벤트 파라미터 구성
+    // GA4 표준 이벤트 파라미터 구성
     const eventParams: Record<string, string | number | undefined> = {
       event_category: category,
       event_label: label,
-      value: value ?? undefined,
     };
+    
+    // value가 있을 때만 추가
+    if (value !== undefined && value !== null) {
+      eventParams.value = value;
+    }
     
     console.log('✅ Sending GA event with params:', eventParams);
     window.gtag('event', action, eventParams);
     console.log('📡 GA event sent successfully');
+    
+    // 표준 이벤트도 추가로 전송 (실시간 인식을 위해)
+    const standardEvent = getStandardEvent(action, category);
+    if (standardEvent) {
+      window.gtag('event', standardEvent.name, standardEvent.params);
+      console.log('📡 Standard GA event sent:', standardEvent);
+    }
     
     // 추가: dataLayer 확인
     if (window.dataLayer) {
@@ -55,6 +66,45 @@ export const event = ({
     });
   }
 };
+
+/**
+ * GA4 표준 이벤트로 매핑
+ */
+function getStandardEvent(action: string, category: string): { name: string; params: Record<string, string> } | null {
+  switch (action) {
+    case 'session_start':
+      return {
+        name: 'session_start',
+        params: {}
+      };
+    case 'new_question':
+      return {
+        name: 'page_view',
+        params: {
+          page_title: 'Interview Question',
+          page_location: window.location.href
+        }
+      };
+    case 'answer_analyzed':
+      return {
+        name: 'select_content',
+        params: {
+          content_type: 'interview_answer',
+          item_id: category
+        }
+      };
+    case 'session_completed':
+      return {
+        name: 'level_end',
+        params: {
+          level_name: category,
+          success: 'true'
+        }
+      };
+    default:
+      return null;
+  }
+}
 
 // Type definitions for gtag
 declare global {
