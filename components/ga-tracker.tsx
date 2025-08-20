@@ -34,7 +34,7 @@ export default function GATracker() {
           
           console.log("✅ GA initialized with ID:", GA_MEASUREMENT_ID);
           console.log("✅ gtag function available:", typeof window.gtag);
-          console.log("✅ dataLayer:", window.dataLayer);
+          console.log("✅ dataLayer initial:", window.dataLayer);
           
           // 테스트 이벤트 즉시 전송
           gtag('event', 'ga_test_event', {
@@ -42,6 +42,17 @@ export default function GATracker() {
             event_label: 'initialization_test'
           });
           console.log("🧪 Test event sent");
+          console.log("📊 DataLayer after test event:", window.dataLayer);
+          
+          // 페이지 로드 완료 후 추가 테스트
+          setTimeout(() => {
+            gtag('event', 'page_loaded', {
+              event_category: 'engagement',
+              event_label: 'app_ready'
+            });
+            console.log("🎯 Page loaded event sent");
+            console.log("📊 Final dataLayer check:", window.dataLayer);
+          }, 1000);
         }}
         onError={(e) => {
           console.error("❌ GA script failed to load:", e);
