@@ -100,42 +100,42 @@ export default function AnalyticsDashboardClient() {
         hasFetchedRef.current = true;
         setIsLoading(true);
 
-        // 서버 카운터 API 호출
-        const [counterResponse] = await Promise.all([
-          fetch('/api/counter'),
-          new Promise((resolve) => setTimeout(resolve, 2000)),
-        ]);
+        // 서버 카운터를 주 데이터 소스로 사용 (GA 설정 전까지)
+        try {
+          const counterResponse = await fetch("/api/counter");
+          if (counterResponse.ok) {
+            const counterData = await counterResponse.json();
+            if (counterData.success) {
+              setAnalytics(counterData.data);
+            }
+          }
+        } catch (counterError) {
+          console.error("Counter API failed:", counterError);
 
-        if (counterResponse.ok) {
-          const counterData = await counterResponse.json();
-          if (counterData.success) {
-            setAnalytics(counterData.data);
+          // 카운터 실패 시 GA 시도
+          try {
+            const gaData = await getRealtimeAnalytics();
+            setAnalytics(gaData);
+          } catch {
+            // 모두 실패 시 기본값
+            setAnalytics(DEFAULT_ANALYTICS);
           }
         }
-        
+
         setIsLoading(false);
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
-        
-        // 실패 시 기존 GA API 사용
-        try {
-          const gaData = await getRealtimeAnalytics();
-          setAnalytics(gaData);
-        } catch {
-          // 모두 실패 시 기본값
-          setAnalytics(DEFAULT_ANALYTICS);
-        }
-        
+        setAnalytics(DEFAULT_ANALYTICS);
         setIsLoading(false);
       }
     };
 
     fetchAnalytics();
 
-    // 5초마다 업데이트
+    // 5초마다 서버 카운터 업데이트
     const interval = setInterval(async () => {
       try {
-        const response = await fetch('/api/counter');
+        const response = await fetch("/api/counter");
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
@@ -143,6 +143,7 @@ export default function AnalyticsDashboardClient() {
           }
         }
       } catch {
+        // 무시 - 기존 데이터 유지
       }
     }, 5000);
 

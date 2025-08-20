@@ -15,17 +15,11 @@ export default function HomePage() {
 
   // 페이지 방문 시 방문자 카운터 증가
   useEffect(() => {
-    // 세션 스토리지로 중복 방지
-    const sessionKey = "visitor_counted";
-    if (!sessionStorage.getItem(sessionKey)) {
-      fetch("/api/counter", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ type: "visitor" }),
-      }).catch(() => {});
-
-      sessionStorage.setItem(sessionKey, "true");
-    }
+    fetch("/api/counter", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ type: "visitor" }),
+    }).catch(() => {});
   }, []);
 
   return (
