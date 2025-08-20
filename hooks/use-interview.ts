@@ -11,7 +11,6 @@ import type {
 import { mockQuestions } from "@/data/mock-questions";
 import { storage } from "@/lib/storage";
 import { event as gtag_event } from "@/lib/gtag";
-import { incrementInterviewStarted, incrementAnalysisCompleted } from "@/lib/realtime-analytics";
 
 export function useInterview() {
   const [currentScreen, setCurrentScreen] =
@@ -195,8 +194,12 @@ export function useInterview() {
           label: category,
         });
 
-        // 실시간 카운터 증가
-        incrementInterviewStarted();
+        // 서버 카운터 증가
+        fetch('/api/counter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type: 'interview' })
+        }).catch(err => console.log('Counter update failed:', err));
 
         // Generate questions for the new session
         await generateQuestionsForSession(newSession);
@@ -435,8 +438,12 @@ export function useInterview() {
             value: score
           });
 
-          // 실시간 카운터 증가
-          incrementAnalysisCompleted();
+          // 서버 카운터 증가
+          fetch('/api/counter', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'analysis' })
+          }).catch(err => console.log('Counter update failed:', err));
         } else {
           // Check if this is a validation error (400 status)
           if (response.status === 400) {

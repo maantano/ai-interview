@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useInterview } from "@/hooks/use-interview";
 import { JobSelectionScreen } from "@/components/job-selection-screen";
 import { LoadingScreen } from "@/components/loading-screen";
@@ -11,6 +12,21 @@ import GATracker from "@/components/ga-tracker";
 
 export default function HomePage() {
   const interviewState = useInterview();
+
+  // 페이지 방문 시 방문자 카운터 증가
+  useEffect(() => {
+    // 세션 스토리지로 중복 방지
+    const sessionKey = 'visitor_counted';
+    if (!sessionStorage.getItem(sessionKey)) {
+      fetch('/api/counter', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'visitor' })
+      }).catch(err => console.log('Visitor count failed:', err));
+      
+      sessionStorage.setItem(sessionKey, 'true');
+    }
+  }, []);
 
   // Debug logging
   // console.log("🏠 [DEBUG] HomePage render:", {

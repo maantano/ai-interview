@@ -5,7 +5,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, PlayCircle, FileText, Activity } from "lucide-react";
 import { getRealtimeAnalytics, type AnalyticsData } from "@/lib/analytics-api";
-import { getRealtimeData, type RealtimeData } from "@/lib/realtime-analytics";
 
 // 기본 데이터를 constant로 정의하여 서버/클라이언트 일치시킴
 const DEFAULT_ANALYTICS: AnalyticsData = {
@@ -75,12 +74,6 @@ function AnimatedNumber({
 
 export default function AnalyticsDashboardClient() {
   const [analytics, setAnalytics] = useState<AnalyticsData>(DEFAULT_ANALYTICS);
-  const [realtimeData, setRealtimeData] = useState<RealtimeData>({
-    totalVisitors: 0,
-    interviewStarted: 0,
-    analysisCompleted: 0,
-    lastUpdated: new Date().toISOString(),
-  });
   // const [lastUpdateText, setLastUpdateText] = useState("로딩 중...");
   const [isLoading, setIsLoading] = useState(true);
   const hasFetchedRef = useRef(false);
@@ -104,76 +97,55 @@ export default function AnalyticsDashboardClient() {
 
     const fetchAnalytics = async () => {
       try {
-        // console.log("📊 Fetching analytics data...");
         hasFetchedRef.current = true;
         setIsLoading(true);
 
-        // 실시간 로컬 데이터 먼저 로드
-        const localData = getRealtimeData();
-        setRealtimeData(localData);
-
-        const [gaData] = await Promise.all([
-          getRealtimeAnalytics(),
+        // 서버 카운터 API 호출
+        const [counterResponse] = await Promise.all([
+          fetch('/api/counter'),
           new Promise((resolve) => setTimeout(resolve, 2000)),
         ]);
 
-        // GA 데이터와 실시간 데이터를 병합 (실시간 우선)
-        const mergedData = {
-          totalVisitors: Math.max(
-            gaData.totalVisitors,
-            localData.totalVisitors
-          ),
-          interviewStarted: Math.max(
-            gaData.interviewStarted,
-            localData.interviewStarted
-          ),
-          analysisCompleted: Math.max(
-            gaData.analysisCompleted,
-            localData.analysisCompleted
-          ),
-          lastUpdated: localData.lastUpdated,
-        };
-
-        setAnalytics(mergedData);
-        // setLastUpdateText(formatLastUpdated(mergedData.lastUpdated));
+        if (counterResponse.ok) {
+          const counterData = await counterResponse.json();
+          if (counterData.success) {
+            setAnalytics(counterData.data);
+          }
+        }
+        
         setIsLoading(false);
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
-
-        // GA 실패 시 실시간 데이터만 사용
-        const localData = getRealtimeData();
-        setRealtimeData(localData);
-        setAnalytics(localData);
-
-        await new Promise((resolve) => setTimeout(resolve, 2000));
+        
+        // 실패 시 기존 GA API 사용
+        try {
+          const gaData = await getRealtimeAnalytics();
+          setAnalytics(gaData);
+        } catch {
+          // 모두 실패 시 기본값
+          setAnalytics(DEFAULT_ANALYTICS);
+        }
+        
         setIsLoading(false);
       }
     };
 
     fetchAnalytics();
 
-    // 실시간 업데이트를 위한 인터벌
-    const interval = setInterval(() => {
-      const newRealtimeData = getRealtimeData();
-      setRealtimeData(newRealtimeData);
-
-      // 현재 analytics와 비교해서 더 큰 값으로 업데이트
-      setAnalytics((current) => ({
-        totalVisitors: Math.max(
-          current.totalVisitors,
-          newRealtimeData.totalVisitors
-        ),
-        interviewStarted: Math.max(
-          current.interviewStarted,
-          newRealtimeData.interviewStarted
-        ),
-        analysisCompleted: Math.max(
-          current.analysisCompleted,
-          newRealtimeData.analysisCompleted
-        ),
-        lastUpdated: newRealtimeData.lastUpdated,
-      }));
-    }, 5000); // 5초마다 업데이트
+    // 5초마다 업데이트
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/counter');
+        if (response.ok) {
+          const data = await response.json();
+          if (data.success) {
+            setAnalytics(data.data);
+          }
+        }
+      } catch (error) {
+        console.log('Counter fetch failed:', error);
+      }
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
