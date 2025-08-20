@@ -11,6 +11,7 @@ import type {
 import { mockQuestions } from "@/data/mock-questions";
 import { storage } from "@/lib/storage";
 import { event as gtag_event } from "@/lib/gtag";
+import { incrementInterviewStarted, incrementAnalysisCompleted } from "@/lib/realtime-analytics";
 
 export function useInterview() {
   const [currentScreen, setCurrentScreen] =
@@ -193,6 +194,9 @@ export function useInterview() {
           category: 'interview',
           label: category,
         });
+
+        // 실시간 카운터 증가
+        incrementInterviewStarted();
 
         // Generate questions for the new session
         await generateQuestionsForSession(newSession);
@@ -430,6 +434,9 @@ export function useInterview() {
             label: currentSession.category,
             value: score
           });
+
+          // 실시간 카운터 증가
+          incrementAnalysisCompleted();
         } else {
           // Check if this is a validation error (400 status)
           if (response.status === 400) {

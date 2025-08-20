@@ -30,6 +30,10 @@ export default function GATracker() {
           gtag('js', new Date());
           gtag('config', GA_MEASUREMENT_ID, {
             page_path: window.location.pathname,
+            debug_mode: true, // 로컬 개발환경에서 디버그 모드
+            send_page_view: true,
+            allow_google_signals: false, // 로컬에서는 Google 신호 비활성화
+            allow_ad_personalization_signals: false
           });
           
           console.log("✅ GA initialized with ID:", GA_MEASUREMENT_ID);

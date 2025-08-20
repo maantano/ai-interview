@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, PlayCircle, FileText, Activity } from "lucide-react";
 import { getRealtimeAnalytics, type AnalyticsData } from "@/lib/analytics-api";
+import { getRealtimeData, type RealtimeData } from "@/lib/realtime-analytics";
 
 // 기본 데이터를 constant로 정의하여 서버/클라이언트 일치시킴
 const DEFAULT_ANALYTICS: AnalyticsData = {
@@ -74,6 +75,12 @@ function AnimatedNumber({
 
 export default function AnalyticsDashboardClient() {
   const [analytics, setAnalytics] = useState<AnalyticsData>(DEFAULT_ANALYTICS);
+  const [realtimeData, setRealtimeData] = useState<RealtimeData>({
+    totalVisitors: 0,
+    interviewStarted: 0,
+    analysisCompleted: 0,
+    lastUpdated: new Date().toISOString(),
+  });
   // const [lastUpdateText, setLastUpdateText] = useState("로딩 중...");
   const [isLoading, setIsLoading] = useState(true);
   const hasFetchedRef = useRef(false);
@@ -101,33 +108,74 @@ export default function AnalyticsDashboardClient() {
         hasFetchedRef.current = true;
         setIsLoading(true);
 
-        const [data] = await Promise.all([
+        // 실시간 로컬 데이터 먼저 로드
+        const localData = getRealtimeData();
+        setRealtimeData(localData);
+
+        const [gaData] = await Promise.all([
           getRealtimeAnalytics(),
           new Promise((resolve) => setTimeout(resolve, 2000)),
         ]);
 
-        setAnalytics(data);
-        // setLastUpdateText(formatLastUpdated(data.lastUpdated));
+        // GA 데이터와 실시간 데이터를 병합 (실시간 우선)
+        const mergedData = {
+          totalVisitors: Math.max(
+            gaData.totalVisitors,
+            localData.totalVisitors
+          ),
+          interviewStarted: Math.max(
+            gaData.interviewStarted,
+            localData.interviewStarted
+          ),
+          analysisCompleted: Math.max(
+            gaData.analysisCompleted,
+            localData.analysisCompleted
+          ),
+          lastUpdated: localData.lastUpdated,
+        };
+
+        setAnalytics(mergedData);
+        // setLastUpdateText(formatLastUpdated(mergedData.lastUpdated));
         setIsLoading(false);
       } catch (error) {
         console.error("Failed to fetch analytics:", error);
 
-        const fallbackData = {
-          totalVisitors: 1247,
-          interviewStarted: 342,
-          analysisCompleted: 189,
-          lastUpdated: new Date().toISOString(),
-        };
+        // GA 실패 시 실시간 데이터만 사용
+        const localData = getRealtimeData();
+        setRealtimeData(localData);
+        setAnalytics(localData);
 
         await new Promise((resolve) => setTimeout(resolve, 2000));
-
-        setAnalytics(fallbackData);
-        // setLastUpdateText(formatLastUpdated(fallbackData.lastUpdated));
         setIsLoading(false);
       }
     };
 
     fetchAnalytics();
+
+    // 실시간 업데이트를 위한 인터벌
+    const interval = setInterval(() => {
+      const newRealtimeData = getRealtimeData();
+      setRealtimeData(newRealtimeData);
+
+      // 현재 analytics와 비교해서 더 큰 값으로 업데이트
+      setAnalytics((current) => ({
+        totalVisitors: Math.max(
+          current.totalVisitors,
+          newRealtimeData.totalVisitors
+        ),
+        interviewStarted: Math.max(
+          current.interviewStarted,
+          newRealtimeData.interviewStarted
+        ),
+        analysisCompleted: Math.max(
+          current.analysisCompleted,
+          newRealtimeData.analysisCompleted
+        ),
+        lastUpdated: newRealtimeData.lastUpdated,
+      }));
+    }, 5000); // 5초마다 업데이트
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -145,6 +193,10 @@ export default function AnalyticsDashboardClient() {
               <path d="M18.6 6.62c-1.44 0-2.8.56-3.77 1.53L12 10.66 10.48 12h.01L7.8 14.39c-.64.64-1.49.99-2.4.99-1.87 0-3.39-1.51-3.39-3.38S3.53 8.62 5.4 8.62c.91 0 1.76.35 2.44 1.03l1.13 1 1.51-1.34L9.22 8.2C8.2 7.18 6.84 6.62 5.4 6.62 2.42 6.62 0 9.04 0 12s2.42 5.38 5.4 5.38c1.44 0 2.8-.56 3.77-1.53l2.83-2.5.01.01L13.52 12h-.01l2.69-2.39c.64-.64 1.49-.99 2.4-.99 1.87 0 3.39 1.51 3.39 3.38s-1.52 3.38-3.39 3.38c-.9 0-1.76-.35-2.44-1.03l-1.14-1.01-1.51 1.34 1.27 1.12c1.02 1.01 2.37 1.57 3.82 1.57 2.98 0 5.4-2.41 5.4-5.38s-2.42-5.37-5.4-5.37z" />
             </svg>
             GA4 연동
+          </Badge>
+          <Badge variant="outline" className="flex items-center gap-1 text-xs">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            실시간 데이터
           </Badge>
         </div>
         {/* <p className="text-sm text-muted-foreground flex items-center justify-center gap-1">
