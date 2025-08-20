@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
         // Try to generate questions with AI
         const result = await generateQuestions(category, customCategory);
         
-        if (result.success && result.questions.length >= 5) {
+        if (result.success && result.questions.length >= 20) {
           questions = result.questions;
           aiGenerated = true;
           
@@ -66,9 +66,9 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Select 10 random questions from mock data
+      // Select 25 random questions from mock data (or all if less than 25)
       const shuffled = [...mockData].sort(() => 0.5 - Math.random());
-      questions = shuffled.slice(0, 10);
+      questions = shuffled.slice(0, Math.min(25, mockData.length));
     }
 
     return NextResponse.json({

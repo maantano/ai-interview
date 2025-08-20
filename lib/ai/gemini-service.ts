@@ -42,16 +42,30 @@ export async function generateQuestions(
   try {
     const jobTitle = category === "other" ? customCategory || "일반" : getJobTitleInKorean(category);
     
-    const prompt = `당신은 ${jobTitle} 분야의 전문 면접관입니다.
-2024-2025년 현재 트렌드에 맞는 실제적인 면접 질문 10개를 생성해주세요.
+    // 다양성을 위한 랜덤 시드 추가
+    const randomSeed = Math.random().toString(36).substring(7);
+    const currentTime = new Date().toISOString();
+    
+    const prompt = `[세션 ID: ${randomSeed}] [생성 시간: ${currentTime}]
+당신은 ${jobTitle} 분야의 전문 면접관입니다.
+2024-2025년 현재 트렌드에 맞는 실제적인 면접 질문 25개를 생성해주세요.
 
 조건:
 1. 실무 경험을 평가할 수 있는 구체적인 질문
-2. 해당 직무의 핵심 역량을 다루는 질문
+2. 해당 직무의 핵심 역량을 다루는 질문  
 3. 최신 기술/트렌드가 반영된 질문
-4. 난이도: 쉬움 3개, 보통 5개, 어려움 2개
-5. 질문은 15-150자 사이로 작성
-6. 한국어로 작성
+4. 다양한 관점과 상황별 질문 포함:
+   - 기술적 숙련도 (5-7개)
+   - 문제해결 및 분석 (4-6개)  
+   - 협업 및 커뮤니케이션 (3-5개)
+   - 리더십 및 성장 (3-5개)
+   - 업계 트렌드 및 미래 전망 (3-5개)
+   - 실제 업무 상황 기반 시나리오 (3-5개)
+5. 난이도: 쉬움 8개, 보통 12개, 어려움 5개
+6. 질문은 15-150자 사이로 작성
+7. 한국어로 작성
+8. 이전 생성과 다른 창의적이고 독창적인 질문
+9. 각 질문은 고유하고 다른 관점에서 접근
 
 형식: 반드시 다음 JSON 배열 형식으로만 반환해주세요:
 [
@@ -80,9 +94,9 @@ export async function generateQuestions(
         question: q.question.trim(),
         difficulty: q.difficulty as "easy" | "medium" | "hard",
       }))
-      .slice(0, 10); // Ensure maximum 10 questions
+      .slice(0, 25); // Ensure maximum 25 questions
 
-    if (questions.length < 5) {
+    if (questions.length < 20) {
       throw new Error("Generated insufficient number of valid questions");
     }
 
