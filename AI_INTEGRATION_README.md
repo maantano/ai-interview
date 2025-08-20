@@ -216,7 +216,6 @@ const response = await fetch("/api/ai/generate-questions", {
 });
 
 const { questions, metadata } = await response.json();
-// console.log(`Generated ${questions.length} questions (AI: ${metadata.aiGenerated})`);
 ```
 
 ## 🎯 Key Benefits

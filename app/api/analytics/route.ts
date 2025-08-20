@@ -10,7 +10,6 @@ async function getGoogleAnalyticsData() {
     const privateKey = process.env.GA_PRIVATE_KEY;
 
     if (!propertyId || !clientEmail || !privateKey) {
-      // console.log('GA API credentials not configured, using mock data');
       throw new Error("GA credentials not configured");
     }
 
@@ -55,10 +54,6 @@ async function getGoogleAnalyticsData() {
       },
     });
 
-    // 디버깅: API 응답 확인
-    // console.log('GA API Response - Page Views:', JSON.stringify(pageViewsResponse.data, null, 2));
-    // console.log('GA API Response - Events:', JSON.stringify(eventsResponse.data, null, 2));
-
     // 전체 누적 데이터 추출
     const totalUsers = parseInt(
       pageViewsResponse.data.rows?.[0]?.metricValues?.[0]?.value || "0"
@@ -72,12 +67,9 @@ async function getGoogleAnalyticsData() {
     let pageViews = 0;
 
     // 모든 이벤트 확인
-    console.log("📊 GA Events found:");
     eventsResponse.data.rows?.forEach((row) => {
       const eventName = row.dimensionValues?.[0]?.value;
       const eventCount = parseInt(row.metricValues?.[0]?.value || "0");
-
-      console.log(`  - ${eventName}: ${eventCount}`);
 
       if (eventName === "session_start") {
         interviewStarted = eventCount; // 면접 시작 버튼 클릭 누적 수
@@ -101,7 +93,6 @@ async function getGoogleAnalyticsData() {
       lastUpdated: kstTime.toISOString(),
     };
 
-    console.log('📈 Final cumulative GA data:', finalData);
     return finalData;
   } catch (error) {
     console.error("Google Analytics API error:", error);
@@ -140,8 +131,6 @@ export async function GET(request: NextRequest) {
           timestamp: kstTimestamp.toISOString(),
         });
       } catch {
-        // console.log('GA API failed, using fallback data:', gaError);
-
         // GA API 실패 시 또는 데이터가 없을 때 실제같은 폴백 데이터
         const baseVisitors = 2847;
         const baseInterviews = 892;

@@ -23,17 +23,6 @@ export const event = ({
   label?: string;
   value?: number;
 }) => {
-  console.log("🎯 GA Event Attempt:", { action, category, label, value });
-  console.log("🔍 Environment Check:", {
-    hasWindow: typeof window !== "undefined",
-    GA_ID: GA_MEASUREMENT_ID,
-    hasGtag: typeof window !== "undefined" && !!window.gtag,
-    gtagType: typeof window !== "undefined" ? typeof window.gtag : "undefined",
-    isLocalhost:
-      typeof window !== "undefined" && window.location.hostname === "localhost",
-    currentURL:
-      typeof window !== "undefined" ? window.location.href : "undefined",
-  });
 
   if (typeof window !== "undefined" && GA_MEASUREMENT_ID && window.gtag) {
     // GA4 표준 이벤트 파라미터 구성
@@ -47,25 +36,14 @@ export const event = ({
       eventParams.value = value;
     }
 
-    console.log("✅ Sending GA event with params:", eventParams);
     window.gtag("event", action, eventParams);
-    console.log("📡 GA event sent successfully");
 
     // 표준 이벤트도 추가로 전송 (실시간 인식을 위해)
     const standardEvent = getStandardEvent(action, category);
     if (standardEvent) {
       window.gtag("event", standardEvent.name, standardEvent.params);
-      console.log("📡 Standard GA event sent:", standardEvent);
     }
 
-    // 추가: dataLayer 확인
-    if (window.dataLayer) {
-      console.log("📊 DataLayer length after event:", window.dataLayer.length);
-      console.log(
-        "📊 Last dataLayer entry:",
-        window.dataLayer[window.dataLayer.length - 1]
-      );
-    }
   } else {
     console.error("❌ GA event failed - requirements not met:", {
       hasWindow: typeof window !== "undefined",

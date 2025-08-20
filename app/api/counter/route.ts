@@ -27,7 +27,6 @@ async function readCounter(): Promise<CounterData> {
     return JSON.parse(data);
   } catch {
     // 파일이 없으면 기본값 반환
-    console.log('Counter file not found, using defaults');
     return DEFAULT_DATA;
   }
 }
@@ -68,9 +67,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { type } = body; // 'visitor', 'interview', 'analysis'
     
-    console.log(`📊 Counter increment request: ${type}`);
     const current = await readCounter();
-    console.log('📊 Current counter before increment:', current);
     
     // 세션 ID 정의 (모든 케이스에서 사용)
     const sessionId = request.headers.get('x-session-id') || 
@@ -102,7 +99,6 @@ export async function POST(request: NextRequest) {
     }
     
     current.lastUpdated = new Date().toISOString();
-    console.log('📊 Counter after increment:', current);
     await writeCounter(current);
     
     // GA Measurement Protocol로도 전송 (실시간 반영)
@@ -128,8 +124,7 @@ export async function POST(request: NextRequest) {
             }]
           })
         });
-      } catch (error) {
-        console.log('GA Measurement Protocol failed:', error);
+      } catch {
       }
     }
     

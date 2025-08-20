@@ -142,8 +142,7 @@ export default function AnalyticsDashboardClient() {
             setAnalytics(data.data);
           }
         }
-      } catch (error) {
-        console.log('Counter fetch failed:', error);
+      } catch {
       }
     }, 5000);
 

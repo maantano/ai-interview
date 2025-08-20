@@ -76,17 +76,6 @@ export function AnalysisScreen({
   endSession,
   setCurrentScreen,
 }: AnalysisScreenProps) {
-  // Debug logging
-  // console.log("🖥️ AnalysisScreen render:", {
-  //   hasCurrentSession: !!currentSession,
-  //   hasCurrentQuestion: !!currentQuestion,
-  //   hasCurrentAnalysis: !!currentAnalysis,
-  //   isAnalyzing,
-  //   currentAnalysis,
-  //   currentAnalysisType: typeof currentAnalysis,
-  //   currentAnalysisKeys: currentAnalysis ? Object.keys(currentAnalysis) : null
-  // })
-
   const [animatedScore, setAnimatedScore] = useState(0);
   const [animatedScores, setAnimatedScores] = useState({
     understanding: 0,
@@ -99,11 +88,8 @@ export function AnalysisScreen({
   // 점수 애니메이션 효과
   useEffect(() => {
     if (!currentAnalysis || typeof currentAnalysis.totalScore !== "number") {
-      // console.log("🎬 Skipping animation - invalid analysis data:", currentAnalysis);
       return;
     }
-
-    // console.log("🎬 Starting animation for analysis:", currentAnalysis)
 
     const duration = 2000;
     const steps = 60;

@@ -37,7 +37,6 @@ async function findAvailablePort(startPort = DEFAULT_PORT) {
     if (available) {
       return port;
     }
-    // console.log(`Port ${port} is in use, trying next port...`);
   }
   throw new Error(
     `No available ports found between ${startPort} and ${MAX_PORT}`
@@ -48,7 +47,6 @@ async function findAvailablePort(startPort = DEFAULT_PORT) {
 async function startDevServer() {
   try {
     const port = await findAvailablePort();
-    // console.log(`\n🚀 Starting development server on port ${port}\n`);
 
     // Set the PORT environment variable and start Next.js
     const command =
@@ -65,7 +63,6 @@ async function startDevServer() {
         console.error(`Stderr: ${stderr}`);
         return;
       }
-      // console.log(stdout);
     });
 
     // Forward output to console
@@ -79,7 +76,6 @@ async function startDevServer() {
 
     // Handle process termination
     process.on("SIGINT", () => {
-      // console.log("\nShutting down development server...");
       child.kill("SIGINT");
       process.exit();
     });

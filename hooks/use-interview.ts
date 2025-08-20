@@ -199,7 +199,7 @@ export function useInterview() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ type: 'interview' })
-        }).catch(err => console.log('Counter update failed:', err));
+        }).catch(() => {});
 
         // Generate questions for the new session
         await generateQuestionsForSession(newSession);
@@ -420,14 +420,6 @@ export function useInterview() {
           setIsAnalyzing(false);
 
           // Google Analytics: Track answer analysis success
-          console.log("📊 GA Event: answer_analyzed", {
-            action: "answer_analyzed",
-            category: "interview",
-            label: currentSession.category,
-            value: analysis.totalScore,
-            hasValue: analysis.totalScore !== undefined,
-            analysisData: analysis,
-          });
 
           // GA4 이벤트 전송
           const score = analysis.totalScore ? Math.round(analysis.totalScore) : 0;
@@ -443,7 +435,7 @@ export function useInterview() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type: 'analysis' })
-          }).catch(err => console.log('Counter update failed:', err));
+          }).catch(() => {});
         } else {
           // Check if this is a validation error (400 status)
           if (response.status === 400) {
